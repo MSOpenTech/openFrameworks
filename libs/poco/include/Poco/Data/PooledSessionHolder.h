@@ -1,7 +1,7 @@
 //
 // PooledSessionHolder.h
 //
-// $Id: //poco/1.4/Data/include/Poco/Data/PooledSessionHolder.h#1 $
+// $Id: //poco/Main/Data/include/Poco/Data/PooledSessionHolder.h#1 $
 //
 // Library: Data
 // Package: SessionPooling
@@ -75,7 +75,7 @@ public:
 
 	int idle() const;
 		/// Returns the number of seconds the session has not been used.
-				
+
 private:
 	SessionPool& _owner;
 	Poco::AutoPtr<SessionImpl> _pImpl;

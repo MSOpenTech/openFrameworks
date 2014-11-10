@@ -1,7 +1,7 @@
 //
 // StatementCreator.h
 //
-// $Id: //poco/1.4/Data/include/Poco/Data/StatementCreator.h#1 $
+// $Id: //poco/Main/Data/include/Poco/Data/StatementCreator.h#5 $
 //
 // Library: Data
 // Package: DataCore
@@ -76,6 +76,9 @@ public:
 	Statement operator << (const T& t)
 		/// Creates a Statement.
 	{
+		if (!_ptrImpl->isConnected())
+			throw NotConnectedException(_ptrImpl->connectionString());
+
 		Statement stmt(_ptrImpl->createStatementImpl());
 		stmt << t;
 		return stmt;

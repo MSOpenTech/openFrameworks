@@ -1,7 +1,7 @@
 //
 // AbstractPreparation.h
 //
-// $Id: //poco/1.4/Data/include/Poco/Data/AbstractPreparation.h#1 $
+// $Id: //poco/Main/Data/include/Poco/Data/AbstractPreparation.h#4 $
 //
 // Library: Data
 // Package: DataCore
@@ -41,7 +41,8 @@
 
 
 #include "Poco/Data/Data.h"
-#include "Poco/RefCountedObject.h"
+#include "Poco/Data/AbstractPreparator.h"
+#include "Poco/SharedPtr.h"
 #include <cstddef>
 
 
@@ -49,64 +50,41 @@ namespace Poco {
 namespace Data {
 
 
-class BLOB;
-
-
-class Data_API AbstractPreparation: public Poco::RefCountedObject
-	/// Interface used for database preparation where we first have to register all data types (and memory output locations)
-	/// before extracting data, i.e. extract works as two-pase extract: first we call prepare once, then extract n-times.
-	/// Only some database connectors will need to implement this interface.
-	/// Note that the values in the interface serve only the purpose of type distinction.
+class Data_API AbstractPreparation
+	/// Interface for calling the appropriate AbstractPreparator method
 {
 public:
-	AbstractPreparation();
+	typedef SharedPtr<AbstractPreparation> Ptr;
+	typedef AbstractPreparator::Ptr PreparatorPtr;
+
+	AbstractPreparation(PreparatorPtr pPreparator);
 		/// Creates the AbstractPreparation.
 
 	virtual ~AbstractPreparation();
 		/// Destroys the AbstractPreparation.
 
-	virtual void prepare(std::size_t pos, Poco::Int8) = 0;
-		/// Prepares an Int8.
+	virtual void prepare() = 0;
+		/// Preparations data.
 
-	virtual void prepare(std::size_t pos, Poco::UInt8) = 0;
-		/// Prepares an UInt8.
+protected:
+	AbstractPreparation();
+	AbstractPreparation(const AbstractPreparation&);
+	AbstractPreparation& operator = (const AbstractPreparation&);
 
-	virtual void prepare(std::size_t pos, Poco::Int16) = 0;
-		/// Prepares an Int16.
+	PreparatorPtr preparation();
+		/// Returns the preparation object
 
-	virtual void prepare(std::size_t pos, Poco::UInt16) = 0;
-		/// Prepares an UInt16.
-
-	virtual void prepare(std::size_t pos, Poco::Int32) = 0;
-		/// Prepares an Int32.
-
-	virtual void prepare(std::size_t pos, Poco::UInt32) = 0;
-		/// Prepares an UInt32.
-
-	virtual void prepare(std::size_t pos, Poco::Int64) = 0;
-		/// Prepares an Int64.
-
-	virtual void prepare(std::size_t pos, Poco::UInt64) = 0;
-		/// Prepares an UInt64.
-
-	virtual void prepare(std::size_t pos, bool) = 0;
-		/// Prepares a boolean.
-
-	virtual void prepare(std::size_t pos, float) = 0;
-		/// Prepares a float.
-
-	virtual void prepare(std::size_t pos, double) = 0;
-		/// Prepares a double.
-
-	virtual void prepare(std::size_t pos, char) = 0;
-		/// Prepares a single character.
-
-	virtual void prepare(std::size_t pos, const std::string& ) = 0;
-		/// Prepares a string.
-
-	virtual void prepare(std::size_t pos, const BLOB&) = 0;
-		/// Prepares a BLOB.
+	PreparatorPtr _pPreparator;
 };
+
+
+//
+// inlines
+//
+inline AbstractPreparation::PreparatorPtr AbstractPreparation::preparation()
+{
+	return _pPreparator;
+}
 
 
 } } // namespace Poco::Data

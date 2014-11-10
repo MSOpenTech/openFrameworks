@@ -63,7 +63,11 @@
 
 
 #if !defined(Net_API)
-	#define Net_API
+	#if !defined(POCO_NO_GCC_API_ATTRIBUTE) && defined (__GNUC__) && (__GNUC__ >= 4)
+		#define Net_API __attribute__ ((visibility ("default")))
+	#else
+		#define Net_API
+	#endif
 #endif
 
 
@@ -77,23 +81,64 @@
 #endif
 
 
+// Default to enabled IPv6 support if not explicitly disabled
+#if !defined(POCO_NET_NO_IPv6) && !defined (POCO_HAVE_IPv6)
+	#define POCO_HAVE_IPv6
+#elif defined(POCO_NET_NO_IPv6) && defined (POCO_HAVE_IPv6)
+	#undef POCO_HAVE_IPv6
+#endif // POCO_NET_NO_IPv6, POCO_HAVE_IPv6
+
+
 namespace Poco {
 namespace Net {
 
 
-void Net_API initializeNetwork();
+inline void Net_API initializeNetwork();
 	/// Initialize the network subsystem.
-	/// Calls WSAStartup() on Windows, does nothing
-	/// on other platforms.
+	/// (Windows only, no-op elsewhere)
 
 
-void Net_API uninitializeNetwork();
+inline void Net_API uninitializeNetwork();
 	/// Uninitialize the network subsystem.
-	/// Calls WSACleanup() on Windows, does nothing
-	/// on other platforms.
+	/// (Windows only, no-op elsewhere)
 
 
-} } // namespace Poco::Net
+}} // namespace Poco::Net
+
+
+//
+// Automate network initialization (only relevant on Windows).
+//
+
+#if defined(POCO_OS_FAMILY_WINDOWS) && !defined(POCO_NO_AUTOMATIC_LIB_INIT)
+
+extern "C" const struct Net_API NetworkInitializer pocoNetworkInitializer;
+
+#if defined(Net_EXPORTS)
+	#if defined(_WIN64)
+		#define POCO_NET_FORCE_SYMBOL(s) __pragma(comment (linker, "/export:"#s))
+	#elif defined(_WIN32)
+		#define POCO_NET_FORCE_SYMBOL(s) __pragma(comment (linker, "/export:_"#s))
+	#endif
+#else  // !Net_EXPORTS
+	#if defined(_WIN64)
+		#define POCO_NET_FORCE_SYMBOL(s) __pragma(comment (linker, "/include:"#s))
+	#elif defined(_WIN32)
+		#define POCO_NET_FORCE_SYMBOL(s) __pragma(comment (linker, "/include:_"#s))
+	#endif
+#endif // Net_EXPORTS
+
+POCO_NET_FORCE_SYMBOL(pocoNetworkInitializer)
+
+#endif // POCO_OS_FAMILY_WINDOWS
+
+
+//
+// Define POCO_NET_HAS_INTERFACE for platforms that have network interface detection implemented.
+//
+#if defined(POCO_OS_FAMILY_WINDOWS) || (POCO_OS == POCO_OS_LINUX) || defined(POCO_OS_FAMILY_BSD) || (POCO_OS == POCO_OS_SOLARIS) || (POCO_OS == POCO_OS_QNX)
+	#define POCO_NET_HAS_INTERFACE
+#endif
 
 
 #endif // Net_Net_INCLUDED

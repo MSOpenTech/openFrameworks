@@ -1,7 +1,7 @@
 //
 // Range.h
 //
-// $Id: //poco/1.4/Data/include/Poco/Data/Range.h#1 $
+// $Id: //poco/Main/Data/include/Poco/Data/Range.h#5 $
 //
 // Library: Data
 // Package: DataCore
@@ -85,29 +85,39 @@ inline const Limit& Range::upper() const
 }
 
 
-template <typename T> Limit limit(T lim, bool hard = false)
+namespace Keywords {
+
+
+template <typename T> 
+Limit limit(T lim, bool hard = false)
 	/// Creates an upperLimit
 {
 	return Limit(static_cast<Poco::UInt32>(lim), hard, false);
 }
 
 
-template <typename T> Limit upperLimit(T lim, bool hard = false)
+template <typename T> 
+Limit upperLimit(T lim, bool hard = false)
 {
 	return limit(lim, hard);
 }
 
 
-template <typename T> Limit lowerLimit(T lim)
+template <typename T> 
+Limit lowerLimit(T lim)
 {
 	return Limit(static_cast<Poco::UInt32>(lim), true, true);
 }
 
 
-template <typename T> Range range(T low, T upp, bool hard = false)
+template <typename T> 
+Range range(T low, T upp, bool hard = false)
 {
 	return Range(static_cast<Poco::UInt32>(low), static_cast<Poco::UInt32>(upp), hard);
 }
+
+
+} // namespace Keywords
 
 
 } } // namespace Poco::Data

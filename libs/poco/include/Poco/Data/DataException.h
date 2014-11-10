@@ -1,7 +1,7 @@
 //
 // DataException.h
 //
-// $Id: //poco/1.4/Data/include/Poco/Data/DataException.h#1 $
+// $Id: //poco/Main/Data/include/Poco/Data/DataException.h#8 $
 //
 // Library: Data
 // Package: DataCore
@@ -57,9 +57,13 @@ POCO_DECLARE_EXCEPTION(Data_API, BindingException, DataException)
 POCO_DECLARE_EXCEPTION(Data_API, ExtractException, DataException)
 POCO_DECLARE_EXCEPTION(Data_API, LimitException, DataException)
 POCO_DECLARE_EXCEPTION(Data_API, NotSupportedException, DataException)
-POCO_DECLARE_EXCEPTION(Data_API, NotImplementedException, DataException)
 POCO_DECLARE_EXCEPTION(Data_API, SessionUnavailableException, DataException)
 POCO_DECLARE_EXCEPTION(Data_API, SessionPoolExhaustedException, DataException)
+POCO_DECLARE_EXCEPTION(Data_API, SessionPoolExistsException, DataException)
+POCO_DECLARE_EXCEPTION(Data_API, NoDataException, DataException)
+POCO_DECLARE_EXCEPTION(Data_API, LengthExceededException, DataException)
+POCO_DECLARE_EXCEPTION(Data_API, ConnectionFailedException, DataException)
+POCO_DECLARE_EXCEPTION(Data_API, NotConnectedException, DataException)
 
 
 } } // namespace Poco::Data

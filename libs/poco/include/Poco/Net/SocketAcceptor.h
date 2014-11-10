@@ -88,18 +88,18 @@ class SocketAcceptor
 	/// Subclasses can override the createServiceHandler() factory method
 	/// if special steps are necessary to create a ServiceHandler object.
 {
-public:		
+public:
 	explicit SocketAcceptor(ServerSocket& socket):
 		_socket(socket),
 		_pReactor(0)
-		/// Creates an SocketAcceptor, using the given ServerSocket.
+		/// Creates a SocketAcceptor, using the given ServerSocket.
 	{
 	}
 
 	SocketAcceptor(ServerSocket& socket, SocketReactor& reactor):
 		_socket(socket),
 		_pReactor(0)
-		/// Creates an SocketAcceptor, using the given ServerSocket.
+		/// Creates a SocketAcceptor, using the given ServerSocket.
 		/// The SocketAcceptor registers itself with the given SocketReactor.
 	{
 		registerAcceptor(reactor);
@@ -138,6 +138,7 @@ public:
 	}
 	
 	void onAccept(ReadableNotification* pNotification)
+		/// Accepts connection and creates event handler.
 	{
 		pNotification->release();
 		StreamSocket sock = _socket.acceptConnection();

@@ -59,6 +59,8 @@ class Net_API SMTPClientSession
 	/// client for sending e-mail messages.
 {
 public:
+	typedef std::vector<std::string> Recipients;
+
 	enum
 	{
 		SMTP_PORT = 25
@@ -130,10 +132,26 @@ public:
 	void sendMessage(const MailMessage& message);
 		/// Sends the given mail message by sending a MAIL FROM command,
 		/// a RCPT TO command for every recipient, and a DATA command with
-		/// the message headers and content.
+		/// the message headers and content. Using this function results in
+		/// RCPT TO commands list generated from the recipient list supplied
+		/// with the message itself.
 		///
 		/// Throws a SMTPException in case of a SMTP-specific error, or a
 		/// NetException in case of a general network communication failure.
+
+	void sendMessage(const MailMessage& message, const Recipients& recipients);
+		/// Sends the given mail message by sending a MAIL FROM command,
+		/// a RCPT TO command for every recipient, and a DATA command with
+		/// the message headers and content. Using this function results in
+		/// message header being generated from the supplied recipients list.
+		///
+		/// Throws a SMTPException in case of a SMTP-specific error, or a
+		/// NetException in case of a general network communication failure.
+
+	void sendMessage(std::istream& istr);
+		/// Sends the mail message from the supplied stream. Content of the stream
+		/// is copied without any checking. Only the completion status is checked and,
+		/// if not valid, SMTPExcpetion is thrown.
 
 	int sendCommand(const std::string& command, std::string& response);
 		/// Sends the given command verbatim to the server
@@ -145,6 +163,19 @@ public:
 	int sendCommand(const std::string& command, const std::string& arg, std::string& response);
 		/// Sends the given command verbatim to the server
 		/// and waits for a response.
+		///
+		/// Throws a SMTPException in case of a SMTP-specific error, or a
+		/// NetException in case of a general network communication failure.
+
+	void sendAddresses(const std::string& from, const Recipients& recipients);
+		/// Sends the message preamble by sending a MAIL FROM command,
+		/// and a RCPT TO command for every recipient.
+		///
+		/// Throws a SMTPException in case of a SMTP-specific error, or a
+		/// NetException in case of a general network communication failure.
+
+	void sendData();
+		/// Sends the message preamble by sending a DATA command.
 		///
 		/// Throws a SMTPException in case of a SMTP-specific error, or a
 		/// NetException in case of a general network communication failure.
@@ -176,6 +207,9 @@ protected:
 	DialogSocket& socket();
 
 private:
+	void sendCommands(const MailMessage& message, const Recipients* pRecipients = 0);
+	void transportMessage(const MailMessage& message);
+
 	DialogSocket _socket;
 	bool         _isOpen;
 };

@@ -105,6 +105,8 @@ class Util_API Application: public Subsystem
 	/// Unicode command line arguments.
 {
 public:
+	typedef std::vector<std::string> ArgVec;
+
 	enum ExitCode
 		/// Commonly used exit status codes.
 		/// Based on the definitions in the 4.3BSD <sysexits.h> header file.
@@ -168,7 +170,7 @@ public:
 		/// Unicode command line arguments from wmain().
 #endif
 
-	void init(const std::vector<std::string>& args);
+	void init(const ArgVec& args);
 		/// Processes the application's command line arguments
 		/// and sets the application's properties (e.g., 
 		/// "application.path", "application.name", etc.).
@@ -237,17 +239,21 @@ public:
 		/// not been registered.
 
 	virtual int run();
-		/// Runs the application by performing additional initializations
+		/// Runs the application by performing additional (un)initializations
 		/// and calling the main() method.
 		///
 		/// First calls initialize(), then calls main(), and
 		/// finally calls uninitialize(). The latter will be called
 		/// even if main() throws an exception. If initialize() throws
 		/// an exception, main() will not be called and the exception
-		/// will be propagated to the caller.
+		/// will be propagated to the caller. If uninitialize() throws
+		/// an exception, the exception will be propagated to the caller.
 
 	std::string commandName() const;
 		/// Returns the command name used to invoke the application.
+
+	std::string commandPath() const;
+		/// Returns the full command path used to invoke the application.
 
 	LayeredConfiguration& config() const;
 		/// Returns the application's configuration.
@@ -264,6 +270,15 @@ public:
 		/// the application's logger is the one specified by the
 		/// "application.logger" configuration property. If that property
 		/// is not specified, the logger is "Application".
+		
+	const ArgVec& argv() const;
+		/// Returns reference to vector of the application's arguments as 
+		/// specified on the command line. If user overrides the 
+		/// Application::main(const ArgVec&) function, it will receive
+		/// only the command line parameters that were not processed in
+		/// Application::processOptons(). This function returns the 
+		/// full set of command line parameters as received in
+		/// main(argc, argv*).
 		
 	const OptionSet& options() const;
 		/// Returns the application's option set.
@@ -367,7 +382,7 @@ protected:
 private:
 	void setup();
 	void setArgs(int argc, char* argv[]);
-	void setArgs(const std::vector<std::string>& args);
+	void setArgs(const ArgVec& args);
 	void getApplicationPath(Poco::Path& path) const;
 	void processOptions();
 	bool findAppConfigFile(const std::string& appName, const std::string& extension, Poco::Path& path) const;
@@ -375,13 +390,13 @@ private:
 	typedef Poco::AutoPtr<Subsystem> SubsystemPtr;
 	typedef std::vector<SubsystemPtr> SubsystemVec;
 	typedef Poco::AutoPtr<LayeredConfiguration> ConfigPtr;
-	typedef std::vector<std::string> ArgVec;
 	
 	ConfigPtr       _pConfig;
 	SubsystemVec    _subsystems;
 	bool            _initialized;
 	std::string     _command;
-	ArgVec          _args;
+	ArgVec          _argv;
+	ArgVec          _unprocessedArgs;
 	OptionSet       _options;
 	bool            _unixOptions;
 	Poco::Logger*   _pLogger;
@@ -432,6 +447,12 @@ inline Poco::Logger& Application::logger() const
 {
 	poco_check_ptr (_pLogger);
 	return *_pLogger;
+}
+
+
+inline const Application::ArgVec& Application::argv() const
+{
+	return _argv;
 }
 
 

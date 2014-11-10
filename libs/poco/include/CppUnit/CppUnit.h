@@ -1,7 +1,7 @@
 //
 // CppUnit.h
 //
-// $Id: //poco/1.3/CppUnit/include/CppUnit/CppUnit.h#1 $
+// $Id: //poco/1.4/CppUnit/include/CppUnit/CppUnit.h#1 $
 //
 
 
@@ -37,7 +37,11 @@
 
 
 #if !defined(CppUnit_API)
-	#define CppUnit_API
+	#if defined (__GNUC__) && (__GNUC__ >= 4)
+		#define CppUnit_API __attribute__ ((visibility ("default")))
+	#else
+		#define CppUnit_API
+	#endif
 #endif
 
 
