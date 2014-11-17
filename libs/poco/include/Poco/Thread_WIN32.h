@@ -43,13 +43,8 @@
 #include "Poco/Foundation.h"
 #include "Poco/Runnable.h"
 #include "Poco/UnWindows.h"
-
-#ifdef WINAPI_FAMILY_PARTITION
-	#if !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
-		#include "ThreadEmulation/ThreadEmulation.h"
-		using namespace ThreadEmulation;
-	#endif
-#endif
+#include <thread>
+#include <chrono>
 
 namespace Poco {
 
@@ -57,7 +52,7 @@ namespace Poco {
 class Foundation_API ThreadImpl
 {
 public:	
-    typedef DWORD TIDImpl;
+	typedef DWORD TIDImpl;
 	typedef void (*Callable)(void*);
 
 #if defined(_DLL)
@@ -85,16 +80,21 @@ public:
 		PRIO_HIGHEST_IMPL = THREAD_PRIORITY_HIGHEST
 	};
 
+	enum Policy
+	{
+		POLICY_DEFAULT_IMPL = 0
+	};
+
 	ThreadImpl();				
 	~ThreadImpl();
 
 	TIDImpl tidImpl() const;
 	void setPriorityImpl(int prio);
 	int getPriorityImpl() const;
-	void setOSPriorityImpl(int prio);
+	void setOSPriorityImpl(int prio, int policy = 0);
 	int getOSPriorityImpl() const;
-	static int getMinOSPriorityImpl();
-	static int getMaxOSPriorityImpl();
+	static int getMinOSPriorityImpl(int policy);
+	static int getMaxOSPriorityImpl(int policy);
 	void setStackSizeImpl(int size);
 	int getStackSizeImpl() const;
 	void startImpl(Runnable& target);
@@ -128,36 +128,33 @@ private:
 	class CurrentThreadHolder
 	{
 	public:
-		CurrentThreadHolder(): _slot(TlsAlloc())
+		CurrentThreadHolder(): _slot(nullptr)
 		{
-			if (_slot == TLS_OUT_OF_INDEXES)
-				throw SystemException("cannot allocate thread context key");
 		}
 		~CurrentThreadHolder()
 		{
-			TlsFree(_slot);
 		}
 		ThreadImpl* get() const
 		{
-			return reinterpret_cast<ThreadImpl*>(TlsGetValue(_slot));
+			return _slot;
 		}
 		void set(ThreadImpl* pThread)
 		{
-			TlsSetValue(_slot, pThread);
+			_slot = pThread;
 		}
 	
 	private:
-		DWORD _slot;
+		ThreadImpl* _slot;
 	};
 
 	Runnable*    _pRunnableTarget;
 	CallbackData _callbackTarget;
-	HANDLE       _thread;
+	std::thread  _thread;
 	DWORD        _threadId;
 	int          _prio;
 	int          _stackSize;
 
-	static CurrentThreadHolder _currentThreadHolder;
+	static /*__declspec(thread) */CurrentThreadHolder _currentThreadHolder;
 };
 
 
@@ -176,13 +173,13 @@ inline int ThreadImpl::getOSPriorityImpl() const
 }
 
 
-inline int ThreadImpl::getMinOSPriorityImpl()
+inline int ThreadImpl::getMinOSPriorityImpl(int /* policy */)
 {
 	return PRIO_LOWEST_IMPL;
 }
 
 
-inline int ThreadImpl::getMaxOSPriorityImpl()
+inline int ThreadImpl::getMaxOSPriorityImpl(int /* policy */)
 {
 	return PRIO_HIGHEST_IMPL;
 }
@@ -190,13 +187,13 @@ inline int ThreadImpl::getMaxOSPriorityImpl()
 
 inline void ThreadImpl::sleepImpl(long milliseconds)
 {
-	Sleep(DWORD(milliseconds));
+	std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
 }
 
 
 inline void ThreadImpl::yieldImpl()
 {
-	Sleep(0);
+	std::this_thread::yield();
 }
 
 
