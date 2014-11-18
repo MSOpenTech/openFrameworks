@@ -18,459 +18,300 @@ using namespace Platform;
 
 namespace AngleApp
 {
-    // Constants used to calculate screen rotations.
-    namespace ScreenRotation
-    {
-        // 0-degree Z-rotation
-        static const XMFLOAT4X4 Rotation0(
-            1.0f, 0.0f, 0.0f, 0.0f,
-            0.0f, 1.0f, 0.0f, 0.0f,
-            0.0f, 0.0f, 1.0f, 0.0f,
-            0.0f, 0.0f, 0.0f, 1.0f
-            );
+	// Constants used to calculate screen rotations.
+	namespace ScreenRotation
+	{
+		// 0-degree Z-rotation
+		static const XMFLOAT4X4 Rotation0(
+			1.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, 1.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 1.0f, 0.0f,
+			0.0f, 0.0f, 0.0f, 1.0f
+			);
 
-        // 90-degree Z-rotation
-        static const XMFLOAT4X4 Rotation90(
-            0.0f, 1.0f, 0.0f, 0.0f,
-            -1.0f, 0.0f, 0.0f, 0.0f,
-            0.0f, 0.0f, 1.0f, 0.0f,
-            0.0f, 0.0f, 0.0f, 1.0f
-            );
+		// 90-degree Z-rotation
+		static const XMFLOAT4X4 Rotation90(
+			0.0f, 1.0f, 0.0f, 0.0f,
+			-1.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 1.0f, 0.0f,
+			0.0f, 0.0f, 0.0f, 1.0f
+			);
 
-        // 180-degree Z-rotation
-        static const XMFLOAT4X4 Rotation180(
-            -1.0f, 0.0f, 0.0f, 0.0f,
-            0.0f, -1.0f, 0.0f, 0.0f,
-            0.0f, 0.0f, 1.0f, 0.0f,
-            0.0f, 0.0f, 0.0f, 1.0f
-            );
+		// 180-degree Z-rotation
+		static const XMFLOAT4X4 Rotation180(
+			-1.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, -1.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 1.0f, 0.0f,
+			0.0f, 0.0f, 0.0f, 1.0f
+			);
 
-        // 270-degree Z-rotation
-        static const XMFLOAT4X4 Rotation270(
-            0.0f, -1.0f, 0.0f, 0.0f,
-            1.0f, 0.0f, 0.0f, 0.0f,
-            0.0f, 0.0f, 1.0f, 0.0f,
-            0.0f, 0.0f, 0.0f, 1.0f
-            );
-    };
+		// 270-degree Z-rotation
+		static const XMFLOAT4X4 Rotation270(
+			0.0f, -1.0f, 0.0f, 0.0f,
+			1.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 1.0f, 0.0f,
+			0.0f, 0.0f, 0.0f, 1.0f
+			);
+	};
 
-    // Constructor for DeviceResources.
-    DeviceResources::DeviceResources() :
-        m_d3dFeatureLevel(D3D_FEATURE_LEVEL_9_1),
-        m_outputSize(0.0f, 0.0f),
-        m_logicalSize(0.0f, 0.0f),
-        m_nativeOrientation(DisplayOrientations::None),
-        m_currentOrientation(DisplayOrientations::None),
-        m_dpi(-1.0f),
-        m_compositionScaleX(1.0f),
-        m_compositionScaleY(1.0f),
-        m_deviceNotify(nullptr),
-        m_eglWindow(nullptr),
-        m_eglContext(nullptr),
-        m_eglDisplay(nullptr),
-        m_eglSurface(nullptr),
-        m_swapChainPanel(nullptr),
-        m_bAngleInitialized(false)
-    {
+	// Constructor for DeviceResources.
+	DeviceResources::DeviceResources() :
+		m_outputSize(0.0f, 0.0f),
+		m_logicalSize(0.0f, 0.0f),
+		m_nativeOrientation(DisplayOrientations::None),
+		m_currentOrientation(DisplayOrientations::None),
+		m_dpi(-1.0f),
+		m_compositionScaleX(1.0f),
+		m_compositionScaleY(1.0f),
+		m_deviceNotify(nullptr),
+		m_eglContext(EGL_NO_CONTEXT),
+		m_eglDisplay(EGL_NO_DISPLAY),
+		m_eglSurface(EGL_NO_SURFACE),
+		m_swapChainPanel(nullptr),
+		m_bAngleInitialized(false)
+	{
 
-    }
+	}
 
-    // Configures resources that don't depend on the Direct3D device.
-    void DeviceResources::CreateDeviceIndependentResources()
-    {
+	// Configures resources that don't depend on the Direct3D device.
+	void DeviceResources::CreateDeviceIndependentResources()
+	{
 
+	}
 
-    }
+	void DeviceResources::Release()
+	{
+		eglMakeCurrent(NULL, NULL, NULL, NULL);
 
-    void DeviceResources::Release()
-    {
-        eglMakeCurrent(NULL, NULL, NULL, NULL);
-
-        if (m_eglDisplay && m_eglContext)
-        {
-            eglDestroyContext(m_eglDisplay, m_eglContext);
-            m_eglContext = nullptr;
-        }
-
-        if (m_eglDisplay && m_eglSurface)
-        {
-            eglDestroySurface(m_eglDisplay, m_eglSurface);
-            m_eglSurface = nullptr;
-        }
-
-        if (m_eglDisplay)
-        {
-            eglTerminate(m_eglDisplay);
-            m_eglDisplay = nullptr;
-        }
-
-        m_eglWindow = nullptr;
-        m_bAngleInitialized = false;
-    }
-
-
-    void DeviceResources::aquireContext()
-    {
-        std::lock_guard<std::mutex> guard(m_mutex);
-        if (!eglMakeCurrent(m_eglDisplay, m_eglSurface, m_eglSurface, m_eglContext)){
-            throw std::runtime_error("DeviceResouces: failed to make EGL context current");
-        }
-    }
-
-    void DeviceResources::releaseContext()
-    {
-        std::lock_guard<std::mutex> guard(m_mutex);
-        if (!eglMakeCurrent(NULL, NULL, NULL, NULL)){
-            throw std::runtime_error("DeviceResouces: failed to set EGL context to NULL");
-        }
-    }
-
-    // Configures the Direct3D device, and stores handles to it and the device context.
-    void DeviceResources::CreateDeviceResources()
-    {
-        //Release();
-
-        ANGLE_D3D_FEATURE_LEVEL featureLevel = ANGLE_D3D_FEATURE_LEVEL::ANGLE_D3D_FEATURE_LEVEL_11_0;
-        //ANGLE_D3D_FEATURE_LEVEL featureLevel = ANGLE_D3D_FEATURE_LEVEL::ANGLE_D3D_FEATURE_LEVEL_9_3;
-
-#ifdef TARGET_WP8
-        featureLevel = ANGLE_D3D_FEATURE_LEVEL::ANGLE_D3D_FEATURE_LEVEL_9_3;
-#endif
-        HRESULT hr = CreateWinrtEglWindow(WINRT_EGL_IUNKNOWN(m_swapChainPanel), featureLevel, m_eglWindow.GetAddressOf());
-        if (FAILED(hr)){
-            throw std::runtime_error("DeviceResouces: couldn't create EGL window");
-        }
-        m_eglDisplay = eglGetDisplay(m_eglWindow.Get());
-        if (m_eglDisplay == EGL_NO_DISPLAY)
-        {
-            throw std::runtime_error("DeviceResouces: couldn't get EGL display");
-        }
-
-        EGLint majorVersion, minorVersion;
-        if (!eglInitialize(m_eglDisplay, &majorVersion, &minorVersion))
-        {
-            throw std::runtime_error("DeviceResouces: failed to initialize EGL");
-        }
-
-        eglBindAPI(EGL_OPENGL_ES_API);
-        if (eglGetError() != EGL_SUCCESS)
-        {
-            throw std::runtime_error("DeviceResouces: failed to bind OpenGL ES API");
-        }
-
-        const EGLint configAttributes[] =
-        {
-            EGL_RED_SIZE,       8,
-            EGL_GREEN_SIZE,     8,
-            EGL_BLUE_SIZE,      8,
-            EGL_ALPHA_SIZE,     8,
-            EGL_DEPTH_SIZE,     24,
-            EGL_STENCIL_SIZE,   8,
-            EGL_SAMPLE_BUFFERS, EGL_DONT_CARE,
-            EGL_NONE
-        };
-
-        EGLint configCount;
-        if (!eglChooseConfig(m_eglDisplay, configAttributes, &m_eglConfig, 1, &configCount) || (configCount != 1))
-        {
-            throw std::runtime_error("DeviceResouces: failed to choose configuration");
-        }
-
-        const EGLint surfaceAttributes[] =
-        {
-            EGL_POST_SUB_BUFFER_SUPPORTED_NV, EGL_TRUE,
-            EGL_NONE, EGL_NONE,
-        };
-
-        m_eglSurface = eglCreateWindowSurface(m_eglDisplay, m_eglConfig, m_eglWindow, surfaceAttributes);
-        if (m_eglSurface == EGL_NO_SURFACE)
-        {
-            eglGetError(); // Clear error and try again
-            m_eglSurface = eglCreateWindowSurface(m_eglDisplay, m_eglConfig, NULL, NULL);
-        }
-
-        if (eglGetError() != EGL_SUCCESS)
-        {
-            throw std::runtime_error("DeviceResouces: failed to create EGL window surface");
-        }
-
-        EGLint contextAttibutes[] =
-        {
-            EGL_CONTEXT_CLIENT_VERSION, 3,
-            EGL_NONE
-        };
-        m_eglContext = eglCreateContext(m_eglDisplay, m_eglConfig, NULL, contextAttibutes);
-        if (eglGetError() != EGL_SUCCESS)
-        {
-            contextAttibutes[1] = 2;
-            m_eglContext = eglCreateContext(m_eglDisplay, m_eglConfig, NULL, contextAttibutes);
-            if(eglGetError() != EGL_SUCCESS)
-            {
-                throw std::runtime_error("DeviceResouces: failed to create EGL context");
-            }
-        }
-
-        eglMakeCurrent(m_eglDisplay, m_eglSurface, m_eglSurface, m_eglContext);
-        if (eglGetError() != EGL_SUCCESS)
-        {
-            throw std::runtime_error("DeviceResouces: failed to make EGL context current");
-        }
-
-        // Turn off vsync
-        //eglSwapInterval(mDisplay, 0);
-
-        m_bAngleInitialized = true;
-    }
-
-    // These resources need to be recreated every time the window size is changed.
-    void DeviceResources::CreateWindowSizeDependentResources()
-    {
-        // Calculate the necessary swap chain and render target size in pixels.
-	    m_outputSize.Width = m_logicalSize.Width * m_compositionScaleX;
-	    m_outputSize.Height = m_logicalSize.Height * m_compositionScaleY;
-	
-	    // Prevent zero size DirectX content from being created.
-	    m_outputSize.Width = max(m_outputSize.Width, 1);
-	    m_outputSize.Height = max(m_outputSize.Height, 1);
-
-	    // The width and height of the swap chain must be based on the window's
-	    // natively-oriented width and height. If the window is not in the native
-	    // orientation, the dimensions must be reversed.
-	    DXGI_MODE_ROTATION displayRotation = ComputeDisplayRotation();
-
-	    bool swapDimensions = displayRotation == DXGI_MODE_ROTATION_ROTATE90 || displayRotation == DXGI_MODE_ROTATION_ROTATE270;
-	    m_d3dRenderTargetSize.Width = swapDimensions ? m_outputSize.Height : m_outputSize.Width;
-	    m_d3dRenderTargetSize.Height = swapDimensions ? m_outputSize.Width : m_outputSize.Height;
-
-	    // Set the proper orientation for the swap chain, and generate 2D and
-	    // 3D matrix transformations for rendering to the rotated swap chain.
-	    // Note the rotation angle for the 2D and 3D transforms are different.
-	    // This is due to the difference in coordinate spaces.  Additionally,
-	    // the 3D matrix is specified explicitly to avoid rounding errors.
-
-	    switch (displayRotation)
-	    {
-	    case DXGI_MODE_ROTATION_IDENTITY:
-		    m_orientationTransform2D = Matrix3x2F::Identity();
-		    m_orientationTransform3D = ScreenRotation::Rotation0;
-            ofSetOrientation(OF_ORIENTATION_DEFAULT);
-		    break;
-
-	    case DXGI_MODE_ROTATION_ROTATE90:
-		    m_orientationTransform2D = 
-			    Matrix3x2F::Rotation(90.0f) *
-			    Matrix3x2F::Translation(m_logicalSize.Height, 0.0f);
-		    m_orientationTransform3D = ScreenRotation::Rotation270;
-            ofSetOrientation(OF_ORIENTATION_90_LEFT);
-		    break;
-
-	    case DXGI_MODE_ROTATION_ROTATE180:
-		    m_orientationTransform2D = 
-			    Matrix3x2F::Rotation(180.0f) *
-			    Matrix3x2F::Translation(m_logicalSize.Width, m_logicalSize.Height);
-		    m_orientationTransform3D = ScreenRotation::Rotation180;
-            ofSetOrientation(OF_ORIENTATION_180);
-		    break;
-
-	    case DXGI_MODE_ROTATION_ROTATE270:
-		    m_orientationTransform2D = 
-			    Matrix3x2F::Rotation(270.0f) *
-			    Matrix3x2F::Translation(0.0f, m_logicalSize.Width);
-		    m_orientationTransform3D = ScreenRotation::Rotation90;
-            ofSetOrientation(OF_ORIENTATION_90_RIGHT);
-		    break;
-
-	    default:
-		    throw ref new FailureException();
-	    }
-    
-        ComPtr<IWinrtEglWindowDimensions> dimensions;
-        HRESULT result = m_eglWindow.As(&dimensions);
-        if (SUCCEEDED(result))
-        {
-            dimensions->SetWindowDimensions(lround(m_d3dRenderTargetSize.Width), lround(m_d3dRenderTargetSize.Height));
-        }
-    
-	    ComPtr<IDXGISwapChain2> spSwapChain2;
-	    result = m_eglWindow->GetAngleSwapChain().As<IDXGISwapChain2>(&spSwapChain2);
-
-	    if (SUCCEEDED(result))
+		if (m_eglDisplay && m_eglContext)
 		{
-            spSwapChain2->SetRotation(displayRotation);
+			eglDestroyContext(m_eglDisplay, m_eglContext);
+			m_eglContext = nullptr;
+		}
 
-	        // Setup inverse scale on the swap chain
-	        DXGI_MATRIX_3X2_F inverseScale = { 0 };
-	        inverseScale._11 = 1.0f / m_compositionScaleX;
-	        inverseScale._22 = 1.0f / m_compositionScaleY;
-	        spSwapChain2->SetMatrixTransform(&inverseScale);
-        }
-    }
+		if (m_eglDisplay && m_eglSurface)
+		{
+			eglDestroySurface(m_eglDisplay, m_eglSurface);
+			m_eglSurface = nullptr;
+		}
 
-    // This method is called when the XAML control is created (or re-created).
-    void DeviceResources::SetSwapChainPanel(SwapChainPanel^ panel)
-    {
-        m_swapChainPanel = panel;
-        DisplayInformation^ currentDisplayInformation = DisplayInformation::GetForCurrentView();
-        m_logicalSize = Windows::Foundation::Size(static_cast<float>(panel->ActualWidth), static_cast<float>(panel->ActualHeight));
-        m_nativeOrientation = currentDisplayInformation->NativeOrientation;
-        m_currentOrientation = currentDisplayInformation->CurrentOrientation;
-        m_compositionScaleX = panel->CompositionScaleX;
-        m_compositionScaleY = panel->CompositionScaleY;
-        m_dpi = currentDisplayInformation->LogicalDpi;
-        CreateDeviceIndependentResources();
-        CreateDeviceResources();
-    }
+		if (m_eglDisplay)
+		{
+			eglTerminate(m_eglDisplay);
+			m_eglDisplay = nullptr;
+		}
 
-    // This method is called in the event handler for the SizeChanged event.
-    void DeviceResources::SetLogicalSize(Windows::Foundation::Size logicalSize)
-    {
-        if (m_logicalSize != logicalSize)
-        {
-            m_logicalSize = logicalSize;
-            CreateWindowSizeDependentResources();
-        }
-    }
+		m_bAngleInitialized = false;
+	}
 
-    // This method is called in the event handler for the DpiChanged event.
-    void DeviceResources::SetDpi(float dpi)
-    {
-        if (dpi != m_dpi)
-        {
-            m_dpi = dpi;
-            //m_d2dContext->SetDpi(m_dpi, m_dpi);
-            CreateWindowSizeDependentResources();
-        }
-    }
+	void DeviceResources::aquireContext()
+	{
+		if (!m_eglSurface)
+			return;
 
-    // This method is called in the event handler for the OrientationChanged event.
-    void DeviceResources::SetCurrentOrientation(DisplayOrientations currentOrientation)
-    {
-        if (m_currentOrientation != currentOrientation)
-        {
-            m_currentOrientation = currentOrientation;
-            CreateWindowSizeDependentResources();
-        }
-    }
+		std::lock_guard<std::mutex> guard(m_mutex);
+		if (!eglMakeCurrent(m_eglDisplay, m_eglSurface, m_eglSurface, m_eglContext)){
+			throw std::runtime_error("DeviceResouces: failed to make EGL context current");
+		}
+	}
 
-    // This method is called in the event handler for the CompositionScaleChanged event.
-    void DeviceResources::SetCompositionScale(float compositionScaleX, float compositionScaleY)
-    {
-        if (m_compositionScaleX != compositionScaleX ||
-            m_compositionScaleY != compositionScaleY)
-        {
-            m_compositionScaleX = compositionScaleX;
-            m_compositionScaleY = compositionScaleY;
-            CreateWindowSizeDependentResources();
-        }
-    }
+	void DeviceResources::releaseContext()
+	{
+		std::lock_guard<std::mutex> guard(m_mutex);
+		if (!eglMakeCurrent(NULL, NULL, NULL, NULL)){
+			throw std::runtime_error("DeviceResouces: failed to set EGL context to NULL");
+		}
+	}
 
-    // This method is called in the event handler for the DisplayContentsInvalidated event.
-    void DeviceResources::ValidateDevice()
-    {
-        //HandleDeviceLost();
-    }
+	// Configures the Direct3D device, and stores handles to it and the device context.
+	void DeviceResources::CreateDeviceResources()
+	{
+		const EGLint configAttributes[] =
+		{
+			EGL_RED_SIZE, 8,
+			EGL_GREEN_SIZE, 8,
+			EGL_BLUE_SIZE, 8,
+			EGL_ALPHA_SIZE, 8,
+			EGL_DEPTH_SIZE, 8,
+			EGL_STENCIL_SIZE, 8,
+			EGL_NONE
+		};
 
-    // Recreate all device resources and set them back to the current state.
-    void DeviceResources::HandleDeviceLost()
-    {
-        Release();
-        if (m_deviceNotify != nullptr)
-        {
-            m_deviceNotify->OnDeviceLost();
-        }
+		const EGLint displayAttributes[] =
+		{
+			// This can be used to configure D3D11. For example, EGL_PLATFORM_ANGLE_TYPE_D3D11_FL9_3_ANGLE could be used.
+			// This would ask the graphics card to use D3D11 Feature Level 9_3 instead of Feature Level 11_0+.
+			// On Windows Phone, this would allow the Phone Emulator to act more like the GPUs that are available on real Phone devices.
+			EGL_PLATFORM_ANGLE_TYPE_ANGLE,
+			EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE,
+			EGL_NONE,
+		};
 
-        CreateDeviceResources();
-        CreateWindowSizeDependentResources();
+		const EGLint contextAttributes[] =
+		{
+			EGL_CONTEXT_CLIENT_VERSION, 2,
+			EGL_NONE
+		};
 
-        if (m_deviceNotify != nullptr)
-        {
-            m_deviceNotify->OnDeviceRestored();
-        }
-    }
+		PFNEGLGETPLATFORMDISPLAYEXTPROC eglGetPlatformDisplayEXT = reinterpret_cast<PFNEGLGETPLATFORMDISPLAYEXTPROC>(eglGetProcAddress("eglGetPlatformDisplayEXT"));
+		if (!eglGetPlatformDisplayEXT)
+		{
+			throw Exception::CreateException(E_FAIL, L"Failed to get function eglGetPlatformDisplayEXT");
+		}
 
-    // Register our DeviceNotify to be informed on device lost and creation.
-    void DeviceResources::RegisterDeviceNotify(IDeviceNotify* deviceNotify)
-    {
-        m_deviceNotify = deviceNotify;
-    }
+		m_eglDisplay = eglGetPlatformDisplayEXT(EGL_PLATFORM_ANGLE_ANGLE, EGL_DEFAULT_DISPLAY, displayAttributes);
+		if (m_eglDisplay == EGL_NO_DISPLAY)
+		{
+			throw Exception::CreateException(E_FAIL, L"Failed to get default EGL display");
+		}
 
-    // Call this method when the app suspends. It provides a hint to the driver that the app 
-    // is entering an idle state and that temporary buffers can be reclaimed for use by other apps.
-    void DeviceResources::Trim()
-    {
-        if (m_eglWindow)
-        {
-            Microsoft::WRL::ComPtr<IUnknown> device = m_eglWindow->GetAngleD3DDevice();
-            Microsoft::WRL::ComPtr<IDXGIDevice3> dxgiDevice;
-            HRESULT result = device.As(&dxgiDevice);
-            if (SUCCEEDED(result))
-            {
-                dxgiDevice->Trim();
-            }
-        }
-    }
+		EGLint majorVersion, minorVersion;
+		if (eglInitialize(m_eglDisplay, &majorVersion, &minorVersion) == EGL_FALSE)
+		{
+			throw Exception::CreateException(E_FAIL, L"Failed to initialize EGL");
+		}
 
-    // Present the contents of the swap chain to the screen.
-    void DeviceResources::Present()
-    {
-        if (!m_bAngleInitialized)
-            return;
+		EGLint numConfigs = 0;
+		if ((eglChooseConfig(m_eglDisplay, configAttributes, &m_eglConfig, 1, &numConfigs) == EGL_FALSE) || (numConfigs == 0))
+		{
+			throw Exception::CreateException(E_FAIL, L"Failed to choose first EGLConfig");
+		}
 
-        eglSwapBuffers(m_eglDisplay, m_eglSurface);
-    }
+		m_eglContext = eglCreateContext(m_eglDisplay, m_eglConfig, EGL_NO_CONTEXT, contextAttributes);
+		if (m_eglContext == EGL_NO_CONTEXT)
+		{
+			throw Exception::CreateException(E_FAIL, L"Failed to create EGL context");
+		}
 
-    // This method determines the rotation between the display device's native Orientation and the
-    // current display orientation.
-    DXGI_MODE_ROTATION DeviceResources::ComputeDisplayRotation()
-    {
-        DXGI_MODE_ROTATION rotation = DXGI_MODE_ROTATION_UNSPECIFIED;
+		m_bAngleInitialized = true;
+	}
 
-        // Note: NativeOrientation can only be Landscape or Portrait even though
-        // the DisplayOrientations enum has other values.
-        switch (m_nativeOrientation)
-        {
-        case DisplayOrientations::Landscape:
-            switch (m_currentOrientation)
-            {
-            case DisplayOrientations::Landscape:
-                rotation = DXGI_MODE_ROTATION_IDENTITY;
-                break;
+	// These resources need to be recreated every time the window size is changed.
+	void DeviceResources::CreateWindowSizeDependentResources()
+	{
+		// Calculate the necessary swap chain and render target size in pixels.
+		m_outputSize.Width = m_logicalSize.Width * m_compositionScaleX;
+		m_outputSize.Height = m_logicalSize.Height * m_compositionScaleY;
 
-            case DisplayOrientations::Portrait:
-                rotation = DXGI_MODE_ROTATION_ROTATE270;
-                break;
+		// Prevent zero size DirectX content from being created.
+		m_outputSize.Width = max(m_outputSize.Width, 1);
+		m_outputSize.Height = max(m_outputSize.Height, 1);
 
-            case DisplayOrientations::LandscapeFlipped:
-                rotation = DXGI_MODE_ROTATION_ROTATE180;
-                break;
+		if (m_eglSurface == EGL_NO_SURFACE)
+		{
+			// Create a PropertySet and initialize with the EGLNativeWindowType.
+			Windows::Foundation::Collections::PropertySet^ surfaceCreationProperties = ref new Windows::Foundation::Collections::PropertySet();
+			surfaceCreationProperties->Insert(ref new String(EGLNativeWindowTypeProperty), m_swapChainPanel);
 
-            case DisplayOrientations::PortraitFlipped:
-                rotation = DXGI_MODE_ROTATION_ROTATE90;
-                break;
-            }
-            break;
+			m_eglSurface = eglCreateWindowSurface(m_eglDisplay, m_eglConfig, reinterpret_cast<IInspectable*>(surfaceCreationProperties), NULL);
+			if (m_eglSurface == EGL_NO_SURFACE)
+			{
+				throw Exception::CreateException(E_FAIL, L"Failed to create EGL surface");
+			}
+		}
+	}
 
-        case DisplayOrientations::Portrait:
-            switch (m_currentOrientation)
-            {
-            case DisplayOrientations::Landscape:
-                rotation = DXGI_MODE_ROTATION_ROTATE90;
-                break;
+	// This method is called when the XAML control is created (or re-created).
+	void DeviceResources::SetSwapChainPanel(SwapChainPanel^ panel)
+	{
+		m_swapChainPanel = panel;
+		DisplayInformation^ currentDisplayInformation = DisplayInformation::GetForCurrentView();
+		m_logicalSize = Windows::Foundation::Size(static_cast<float>(panel->ActualWidth), static_cast<float>(panel->ActualHeight));
+		m_nativeOrientation = currentDisplayInformation->NativeOrientation;
+		m_currentOrientation = currentDisplayInformation->CurrentOrientation;
+		m_compositionScaleX = panel->CompositionScaleX;
+		m_compositionScaleY = panel->CompositionScaleY;
+		m_dpi = currentDisplayInformation->LogicalDpi;
+		CreateDeviceIndependentResources();
+		CreateDeviceResources();
+	}
 
-            case DisplayOrientations::Portrait:
-                rotation = DXGI_MODE_ROTATION_IDENTITY;
-                break;
+	// This method is called in the event handler for the SizeChanged event.
+	void DeviceResources::SetLogicalSize(Windows::Foundation::Size logicalSize)
+	{
+		if (m_logicalSize != logicalSize)
+		{
+			m_logicalSize = logicalSize;
+			CreateWindowSizeDependentResources();
+		}
+	}
 
-            case DisplayOrientations::LandscapeFlipped:
-                rotation = DXGI_MODE_ROTATION_ROTATE270;
-                break;
+	// This method is called in the event handler for the DpiChanged event.
+	void DeviceResources::SetDpi(float dpi)
+	{
+		if (dpi != m_dpi)
+		{
+			m_dpi = dpi;
+			CreateWindowSizeDependentResources();
+		}
+	}
 
-            case DisplayOrientations::PortraitFlipped:
-                rotation = DXGI_MODE_ROTATION_ROTATE180;
-                break;
-            }
-            break;
-        }
-        return rotation;
-    }
+	// This method is called in the event handler for the OrientationChanged event.
+	void DeviceResources::SetCurrentOrientation(DisplayOrientations currentOrientation)
+	{
+		if (m_currentOrientation != currentOrientation)
+		{
+			m_currentOrientation = currentOrientation;
+			CreateWindowSizeDependentResources();
+		}
+	}
+
+	// This method is called in the event handler for the CompositionScaleChanged event.
+	void DeviceResources::SetCompositionScale(float compositionScaleX, float compositionScaleY)
+	{
+		if (m_compositionScaleX != compositionScaleX ||
+			m_compositionScaleY != compositionScaleY)
+		{
+			m_compositionScaleX = compositionScaleX;
+			m_compositionScaleY = compositionScaleY;
+			CreateWindowSizeDependentResources();
+		}
+	}
+
+	// This method is called in the event handler for the DisplayContentsInvalidated event.
+	void DeviceResources::ValidateDevice()
+	{
+
+	}
+
+	// Recreate all device resources and set them back to the current state.
+	void DeviceResources::HandleDeviceLost()
+	{
+		Release();
+
+		if (m_deviceNotify != nullptr)
+		{
+			m_deviceNotify->OnDeviceLost();
+		}
+
+		CreateDeviceResources();
+		CreateWindowSizeDependentResources();
+
+		if (m_deviceNotify != nullptr)
+		{
+			m_deviceNotify->OnDeviceRestored();
+		}
+	}
+
+	// Register our DeviceNotify to be informed on device lost and creation.
+	void DeviceResources::RegisterDeviceNotify(IDeviceNotify* deviceNotify)
+	{
+		m_deviceNotify = deviceNotify;
+	}
+
+	// Call this method when the app suspends. It provides a hint to the driver that the app 
+	// is entering an idle state and that temporary buffers can be reclaimed for use by other apps.
+	void DeviceResources::Trim()
+	{
+
+	}
+
+	// Present the contents of the swap chain to the screen.
+	void DeviceResources::Present()
+	{
+		if (!m_bAngleInitialized)
+			return;
+
+		eglSwapBuffers(m_eglDisplay, m_eglSurface);
+	}
 }

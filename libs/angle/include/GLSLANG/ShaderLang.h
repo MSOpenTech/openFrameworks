@@ -39,6 +39,7 @@ typedef unsigned int GLenum;
 }
 
 // Must be included after GLenum proxy typedef
+// Note: make sure to increment ANGLE_SH_VERSION when changing ShaderVars.h
 #include "ShaderVars.h"
 
 #ifdef __cplusplus
@@ -47,7 +48,7 @@ extern "C" {
 
 // Version number for shader translation API.
 // It is incremented every time the API changes.
-#define ANGLE_SH_VERSION 129
+#define ANGLE_SH_VERSION 130
 
 typedef enum {
   SH_GLES2_SPEC = 0x8B40,
@@ -244,6 +245,12 @@ typedef struct
     int EXT_draw_buffers;
     int EXT_frag_depth;
     int EXT_shader_texture_lod;
+
+    // Set to 1 to enable replacing GL_EXT_draw_buffers #extension directives
+    // with GL_NV_draw_buffers in ESSL output. This flag can be used to emulate
+    // EXT_draw_buffers by using it in combination with GLES3.0 glDrawBuffers
+    // function. This applies to Tegra K1 devices.
+    int NV_draw_buffers;
 
     // Set to 1 if highp precision is supported in the fragment language.
     // Default is 0.

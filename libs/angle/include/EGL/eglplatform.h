@@ -73,30 +73,14 @@
 #endif
 #include <windows.h>
 
-#if defined(WINAPI_FAMILY)
-
-#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP) && !defined(ANGLE_PLATFORM_WINRT)
-
 typedef HDC     EGLNativeDisplayType;
 typedef HBITMAP EGLNativePixmapType;
-typedef HWND    EGLNativeWindowType;
 
+#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_PC_APP || WINAPI_FAMILY == WINAPI_FAMILY_PHONE_APP) /* Windows Store */
+#include <inspectable.h>
+typedef IInspectable* EGLNativeWindowType;
 #else
-
-#include <wrl\client.h>
-#define WINRT_EGL_IUNKNOWN(x) reinterpret_cast<IUnknown *>(x)
-typedef Microsoft::WRL::ComPtr<IUnknown> EGLNativeWindowType;
-typedef IUnknown *EGLNativeDisplayType;
-typedef HBITMAP EGLNativePixmapType;
-
-#endif
-
-#elif defined(_WIN32) || defined(_WIN64)
-
-typedef HDC     EGLNativeDisplayType;
-typedef HBITMAP EGLNativePixmapType;
 typedef HWND    EGLNativeWindowType;
-
 #endif
 
 #elif defined(__WINSCW__) || defined(__SYMBIAN32__)  /* Symbian */

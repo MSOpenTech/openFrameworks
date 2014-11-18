@@ -5,12 +5,12 @@
 #include "EGL/eglplatform.h"
 #include "GLES2/gl2.h"
 #include "GLES2/gl2ext.h"
-#include "winrtangle.h"
+#include <angle_windowsstore.h>
 #include <mutex>
 
 namespace AngleApp
 {
-    // Provides an interface for an application that owns DeviceResources to be notified of the device being lost or created.
+	// Provides an interface for an application that owns DeviceResources to be notified of the device being lost or created.
 	interface IDeviceNotify
 	{
 		virtual void OnDeviceLost() = 0;
@@ -37,27 +37,20 @@ namespace AngleApp
 		Windows::Foundation::Size GetOutputSize() const					{ return m_outputSize; }
 		Windows::Foundation::Size GetLogicalSize() const				{ return m_logicalSize; }
 
-		// D3D Accessors.
-		DirectX::XMFLOAT4X4		GetOrientationTransform3D() const		{ return m_orientationTransform3D; }
-		D2D1::Matrix3x2F		GetOrientationTransform2D() const		{ return m_orientationTransform2D; }
-        float                   GetDpi() const                          { return m_compositionScaleX; }
-
-        void aquireContext();
-        void releaseContext();
+		float GetDpi() const                          { return m_compositionScaleX; }
+		void aquireContext();
+		void releaseContext();
 
 	private:
 		void CreateDeviceIndependentResources();
 		void CreateDeviceResources();
 		void CreateWindowSizeDependentResources();
-		DXGI_MODE_ROTATION ComputeDisplayRotation();
-        void Release();
+		void Release();
 
 		// Cached reference to the XAML panel.
 		Windows::UI::Xaml::Controls::SwapChainPanel^    m_swapChainPanel;
 
 		// Cached device properties.
-		D3D_FEATURE_LEVEL								m_d3dFeatureLevel;
-		Windows::Foundation::Size						m_d3dRenderTargetSize;
 		Windows::Foundation::Size						m_outputSize;
 		Windows::Foundation::Size						m_logicalSize;
 		Windows::Graphics::Display::DisplayOrientations	m_nativeOrientation;
@@ -66,20 +59,15 @@ namespace AngleApp
 		float											m_compositionScaleX;
 		float											m_compositionScaleY;
 
-        // EGL stuff
-        bool m_bAngleInitialized;
-        EGLConfig m_eglConfig;
-        EGLDisplay m_eglDisplay;
-        EGLContext m_eglContext;
-        EGLSurface m_eglSurface;
-        Microsoft::WRL::ComPtr<IWinrtEglWindow> m_eglWindow;
-
-		// Transforms used for display orientation.
-		D2D1::Matrix3x2F	m_orientationTransform2D;
-		DirectX::XMFLOAT4X4	m_orientationTransform3D;
+		// EGL stuff
+		bool m_bAngleInitialized;
+		EGLConfig m_eglConfig;
+		EGLDisplay m_eglDisplay;
+		EGLContext m_eglContext;
+		EGLSurface m_eglSurface;
 
 		// The IDeviceNotify can be held directly as it owns the DeviceResources.
 		IDeviceNotify* m_deviceNotify;
-        std::mutex m_mutex;
+		std::mutex m_mutex;
 	};
 }

@@ -1,8 +1,6 @@
 #ifndef __eglext_h_
 #define __eglext_h_ 1
 
-#include <EGL/eglplatform.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -37,6 +35,8 @@ extern "C" {
 **
 ** Khronos $Revision: 27018 $ on $Date: 2014-06-10 08:06:12 -0700 (Tue, 10 Jun 2014) $
 */
+
+#include <EGL/eglplatform.h>
 
 #define EGL_EGLEXT_VERSION 20140610
 
@@ -450,6 +450,8 @@ EGLAPI EGLBoolean EGLAPIENTRY eglQuerySurfacePointerANGLE (EGLDisplay dpy, EGLSu
 #define EGL_PLATFORM_ANGLE_TYPE_D3D9_ANGLE 0x3204
 #define EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE 0x3205
 #define EGL_PLATFORM_ANGLE_TYPE_D3D11_WARP_ANGLE 0x3206
+#define EGL_PLATFORM_ANGLE_TYPE_D3D11_FL9_3_ANGLE 0x3209
+#define EGL_PLATFORM_ANGLE_TYPE_D3D11_FL9_3_WARP_ANGLE 0x320A
 #endif /* EGL_ANGLE_platform_angle_d3d */
 
 #ifndef EGL_ANGLE_platform_angle_opengl
