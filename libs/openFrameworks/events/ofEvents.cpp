@@ -6,10 +6,6 @@
 #include "ofAppBaseWindow.h"
 #include <set>
 
-#ifdef TARGET_WP8
-#include "ThreadEmulation.h"
-using namespace ThreadEmulation;
-#endif
 
 static const double MICROS_TO_SEC = .000001;
 static const double MICROS_TO_MILLIS = .001;

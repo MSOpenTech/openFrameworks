@@ -15,10 +15,10 @@
 #include FT_TRIGONOMETRY_H
 #include <fontconfig/fontconfig.h>
 #else
-#include "freetype2/freetype/freetype.h"
-#include "freetype2/freetype/ftglyph.h"
-#include "freetype2/freetype/ftoutln.h"
-#include "freetype2/freetype/fttrigon.h"
+#include "freetype/freetype.h"
+#include "freetype/ftglyph.h"
+#include "freetype/ftoutln.h"
+#include "freetype/fttrigon.h"
 #ifdef TARGET_WINRT
 #undef generic
 #undef internal
