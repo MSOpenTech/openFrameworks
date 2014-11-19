@@ -76,7 +76,11 @@
 
 
 #if !defined(Foundation_API)
-	#define Foundation_API
+	#if !defined(POCO_NO_GCC_API_ATTRIBUTE) && defined (__GNUC__) && (__GNUC__ >= 4)
+		#define Foundation_API __attribute__ ((visibility ("default")))
+	#else
+		#define Foundation_API
+	#endif
 #endif
 
 
@@ -122,6 +126,25 @@
 	#include "Poco/Platform_VX.h"
 #elif defined(POCO_OS_FAMILY_UNIX)
 	#include "Poco/Platform_POSIX.h"
+#endif
+
+
+//
+// Include alignment settings early
+//
+#include "Poco/Alignment.h"
+
+//
+// Cleanup inconsistencies
+//
+#ifdef POCO_OS_FAMILY_WINDOWS
+	#if defined(POCO_WIN32_UTF8) && defined(POCO_NO_WSTRING)
+		#error POCO_WIN32_UTF8 and POCO_NO_WSTRING are mutually exclusive.
+	#endif
+#else
+	#ifdef POCO_WIN32_UTF8
+		#undef POCO_WIN32_UTF8
+	#endif
 #endif
 
 

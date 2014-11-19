@@ -173,6 +173,15 @@ public:
 		/// If the value contains references to other properties (${<property>}), these
 		/// are expanded.
 		
+	unsigned int getUInt(const std::string& key) const;
+		/// Returns the unsigned int value of the property with the given name.
+		/// Throws a NotFoundException if the key does not exist.
+		/// Throws a SyntaxException if the property can not be converted
+		/// to an unsigned int.
+		/// Numbers starting with 0x are treated as hexadecimal.
+		/// If the value contains references to other properties (${<property>}), these
+		/// are expanded.
+		
 	int getInt(const std::string& key, int defaultValue) const;
 		/// If a property with the given key exists, returns the property's int value,
 		/// otherwise returns the given default value.
@@ -181,6 +190,55 @@ public:
 		/// Numbers starting with 0x are treated as hexadecimal.
 		/// If the value contains references to other properties (${<property>}), these
 		/// are expanded.
+		
+	unsigned int getUInt(const std::string& key, unsigned int defaultValue) const;
+		/// If a property with the given key exists, returns the property's unsigned int
+		/// value, otherwise returns the given default value.
+		/// Throws a SyntaxException if the property can not be converted
+		/// to an unsigned int.
+		/// Numbers starting with 0x are treated as hexadecimal.
+		/// If the value contains references to other properties (${<property>}), these
+		/// are expanded.
+
+#if defined(POCO_HAVE_INT64)
+
+	Int64 getInt64(const std::string& key) const;
+		/// Returns the Int64 value of the property with the given name.
+		/// Throws a NotFoundException if the key does not exist.
+		/// Throws a SyntaxException if the property can not be converted
+		/// to an Int64.
+		/// Numbers starting with 0x are treated as hexadecimal.
+		/// If the value contains references to other properties (${<property>}), these
+		/// are expanded.
+
+	UInt64 getUInt64(const std::string& key) const;
+		/// Returns the UInt64 value of the property with the given name.
+		/// Throws a NotFoundException if the key does not exist.
+		/// Throws a SyntaxException if the property can not be converted
+		/// to an UInt64.
+		/// Numbers starting with 0x are treated as hexadecimal.
+		/// If the value contains references to other properties (${<property>}), these
+		/// are expanded.
+
+	Int64 getInt64(const std::string& key, Int64 defaultValue) const;
+		/// If a property with the given key exists, returns the property's Int64 value,
+		/// otherwise returns the given default value.
+		/// Throws a SyntaxException if the property can not be converted
+		/// to an Int64.
+		/// Numbers starting with 0x are treated as hexadecimal.
+		/// If the value contains references to other properties (${<property>}), these
+		/// are expanded.
+
+	UInt64 getUInt64(const std::string& key, UInt64 defaultValue) const;
+		/// If a property with the given key exists, returns the property's UInt64
+		/// value, otherwise returns the given default value.
+		/// Throws a SyntaxException if the property can not be converted
+		/// to an UInt64.
+		/// Numbers starting with 0x are treated as hexadecimal.
+		/// If the value contains references to other properties (${<property>}), these
+		/// are expanded.
+
+#endif // defined(POCO_HAVE_INT64)
 
 	double getDouble(const std::string& key) const;
 		/// Returns the double value of the property with the given name.
@@ -218,19 +276,35 @@ public:
 		/// If the value contains references to other properties (${<property>}), these
 		/// are expanded.
 		
-	void setString(const std::string& key, const std::string& value);
+	virtual void setString(const std::string& key, const std::string& value);
 		/// Sets the property with the given key to the given value.
 		/// An already existing value for the key is overwritten.
 		
-	void setInt(const std::string& key, int value);
+	virtual void setInt(const std::string& key, int value);
+		/// Sets the property with the given key to the given value.
+		/// An already existing value for the key is overwritten.
+		
+	virtual void setUInt(const std::string& key, unsigned int value);
 		/// Sets the property with the given key to the given value.
 		/// An already existing value for the key is overwritten.
 
-	void setDouble(const std::string& key, double value);
+#if defined(POCO_HAVE_INT64)
+
+	virtual void setInt64(const std::string& key, Int64 value);
 		/// Sets the property with the given key to the given value.
 		/// An already existing value for the key is overwritten.
 
-	void setBool(const std::string& key, bool value);
+	virtual void setUInt64(const std::string& key, UInt64 value);
+		/// Sets the property with the given key to the given value.
+		/// An already existing value for the key is overwritten.
+
+#endif // defined(POCO_HAVE_INT64)
+
+	virtual void setDouble(const std::string& key, double value);
+		/// Sets the property with the given key to the given value.
+		/// An already existing value for the key is overwritten.
+
+	virtual void setBool(const std::string& key, bool value);
 		/// Sets the property with the given key to the given value.
 		/// An already existing value for the key is overwritten.
 		
@@ -292,6 +366,15 @@ protected:
 		/// implementation throws a Poco::NotImplementedException.
 
 	static int parseInt(const std::string& value);
+	static int parseUInt(const std::string& value);
+
+#if defined(POCO_HAVE_INT64)
+
+	static Int64 parseInt64(const std::string& value);
+	static UInt64 parseUInt64(const std::string& value);
+
+#endif // defined(POCO_HAVE_INT64)
+
 	static bool parseBool(const std::string& value);
 	void setRawWithEvent(const std::string& key, std::string value);
 	
@@ -306,7 +389,7 @@ private:
 
 	mutable int _depth;
 	bool        _eventsEnabled;
-	mutable Poco::FastMutex _mutex;
+	mutable Poco::Mutex _mutex;
 	
 	friend class LayeredConfiguration;
 	friend class ConfigurationView;

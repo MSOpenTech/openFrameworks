@@ -1,7 +1,7 @@
 //
 // Platform.h
 //
-// $Id: //poco/1.4/Foundation/include/Poco/Platform.h#4 $
+// $Id: //poco/1.4/Foundation/include/Poco/Platform.h#5 $
 //
 // Library: Foundation
 // Package: Core
@@ -65,7 +65,7 @@
 #define POCO_OS_VMS           0x2001
 
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
 	#define POCO_OS_FAMILY_UNIX 1
 	#define POCO_OS_FAMILY_BSD 1
 	#define POCO_OS POCO_OS_FREE_BSD
@@ -102,6 +102,12 @@
 #elif defined(__QNX__)
 	#define POCO_OS_FAMILY_UNIX 1
 	#define POCO_OS POCO_OS_QNX
+#elif defined(__CYGWIN__)
+	#define POCO_OS_FAMILY_UNIX 1
+	#define POCO_OS POCO_OS_CYGWIN
+#elif defined(POCO_VXWORKS)
+  #define POCO_OS_FAMILY_UNIX 1
+  #define POCO_OS POCO_OS_VXWORKS
 #elif defined(unix) || defined(__unix) || defined(__unix__)
 	#define POCO_OS_FAMILY_UNIX 1
 	#define POCO_OS POCO_OS_UNKNOWN_UNIX
@@ -111,17 +117,21 @@
 #elif defined(_WIN32) || defined(_WIN64)
 	#define POCO_OS_FAMILY_WINDOWS 1
 	#define POCO_OS POCO_OS_WINDOWS_NT
-#elif defined(__CYGWIN__)
-	#define POCO_OS_FAMILY_UNIX 1
-	#define POCO_OS POCO_OS_CYGWIN
 #elif defined(__VMS)
 	#define POCO_OS_FAMILY_VMS 1
 	#define POCO_OS POCO_OS_VMS
-#elif defined(POCO_VXWORKS)
-  #define POCO_OS_FAMILY_UNIX 1
-  #define POCO_OS POCO_OS_VXWORKS
 #endif
 
+
+#if !defined(POCO_OS)
+	#error "Unknown Platform."
+#endif
+
+
+#ifndef POCO_OS_FAMILY_UNIX
+	#define GCC_DIAG_OFF(x)
+	#define GCC_DIAG_ON(x)
+#endif
 
 //
 // Hardware Architecture and Byte Order
@@ -140,6 +150,7 @@
 #define POCO_ARCH_S390    0x0c
 #define POCO_ARCH_SH      0x0d
 #define POCO_ARCH_NIOS2   0x0e
+#define POCO_ARCH_AARCH64 0x0f
 
 
 #if defined(__ALPHA) || defined(__alpha) || defined(__alpha__) || defined(_M_ALPHA)
@@ -182,27 +193,84 @@
 	#else
 		#define POCO_ARCH_LITTLE_ENDIAN 1
 	#endif
+#elif defined(__arm64__) || defined(__arm64) 
+	#define POCO_ARCH POCO_ARCH_ARM64
+	#if defined(__ARMEB__)
+		#define POCO_ARCH_BIG_ENDIAN 1
+	#elif defined(__BYTE_ORDER__) && defined(__ORDER_BIG_ENDIAN__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+		#define POCO_ARCH_BIG_ENDIAN 1
+	#else
+		#define POCO_ARCH_LITTLE_ENDIAN 1
+	#endif
 #elif defined(__m68k__)
 	#define POCO_ARCH POCO_ARCH_M68K
 	#define POCO_ARCH_BIG_ENDIAN 1
 #elif defined(__s390__)
 	#define POCO_ARCH POCO_ARCH_S390
 	#define POCO_ARCH_BIG_ENDIAN 1
-#elif defined(__sh__) || defined(__sh)
+#elif defined(__sh__) || defined(__sh) || defined(SHx) || defined(_SHX_)
 	#define POCO_ARCH POCO_ARCH_SH
-	#if defined(__LITTLE_ENDIAN__)
+	#if defined(__LITTLE_ENDIAN__) || (POCO_OS == POCO_OS_WINDOWS_CE)
 		#define POCO_ARCH_LITTLE_ENDIAN 1
 	#else
 		#define POCO_ARCH_BIG_ENDIAN 1
 	#endif
 #elif defined (nios2) || defined(__nios2) || defined(__nios2__)
-    #define POCO_ARCH POCO_ARCH_NIOS2
-    #if defined(__nios2_little_endian) || defined(nios2_little_endian) || defined(__nios2_little_endian__)
+	#define POCO_ARCH POCO_ARCH_NIOS2
+	#if defined(__nios2_little_endian) || defined(nios2_little_endian) || defined(__nios2_little_endian__)
 		#define POCO_ARCH_LITTLE_ENDIAN 1
 	#else
 		#define POCO_ARCH_BIG_ENDIAN 1
 	#endif
+#elif defined(__AARCH64EL__)
+	#define POCO_ARCH POCO_ARCH_AARCH64
+	#define POCO_ARCH_LITTLE_ENDIAN 1
+#elif defined(__AARCH64EB__)
+	#define POCO_ARCH POCO_ARCH_AARCH64
+	#define POCO_ARCH_BIG_ENDIAN 1
+#endif
 
+
+#if defined(_MSC_VER)
+	#define POCO_COMPILER_MSVC
+#elif defined(__clang__)
+	#define POCO_COMPILER_CLANG
+#elif defined (__GNUC__)
+	#define POCO_COMPILER_GCC
+#elif defined (__MINGW32__) || defined (__MINGW64__)
+	#define POCO_COMPILER_MINGW
+#elif defined (__INTEL_COMPILER) || defined(__ICC) || defined(__ECC) || defined(__ICL)
+	#define POCO_COMPILER_INTEL
+#elif defined (__SUNPRO_CC)
+	#define POCO_COMPILER_SUN
+#elif defined (__MWERKS__) || defined(__CWCC__)
+	#define POCO_COMPILER_CODEWARRIOR
+#elif defined (__sgi) || defined(sgi)
+	#define POCO_COMPILER_SGI
+#elif defined (__HP_aCC)
+	#define POCO_COMPILER_HP_ACC
+#elif defined (__BORLANDC__) || defined(__CODEGEARC__)
+	#define POCO_COMPILER_CBUILDER
+#elif defined (__DMC__)
+	#define POCO_COMPILER_DMARS
+#elif defined (__HP_aCC)
+	#define POCO_COMPILER_HP_ACC
+#elif (defined (__xlc__) || defined (__xlC__)) && defined(__IBMCPP__)
+	#define POCO_COMPILER_IBM_XLC // IBM XL C++
+#elif defined (__IBMCPP__) && defined(__COMPILER_VER__)
+	#define POCO_COMPILER_IBM_XLC_ZOS // IBM z/OS C++
+#endif
+
+
+#if !defined(POCO_ARCH)
+	#error "Unknown Hardware Architecture."
+#endif
+
+
+#if defined(POCO_OS_FAMILY_WINDOWS)
+	#define POCO_DEFAULT_NEWLINE_CHARS "\r\n"
+#else
+	#define POCO_DEFAULT_NEWLINE_CHARS "\n"
 #endif
 
 
