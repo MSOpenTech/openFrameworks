@@ -67,8 +67,11 @@ x) Close()
 #include <wchar.h>
 #include <stdio.h>
 
-#ifndef TARGET_WIN32
-
+#if defined(TARGET_WIN32) || defined(TARGET_WINRT)
+	//windows includes
+	#include <winsock2.h>
+	#include <ws2tcpip.h>		// TCP/IP annex needed for multicasting
+#else
 	//unix includes - works for osx should be same for *nix
 	#include <ctype.h>
 	#include <netdb.h>
@@ -88,16 +91,10 @@ x) Close()
         #include <netinet/tcp.h>		/* for TCP_MAXSEG value */
     //#endif
 
-
 	#define SO_MAX_MSG_SIZE TCP_MAXSEG
 	#define INVALID_SOCKET -1
 	#define SOCKET_ERROR -1
 	#define FAR
-
-#else
-	//windows includes
-	#include <winsock2.h>
-	#include <ws2tcpip.h>		// TCP/IP annex needed for multicasting
 #endif
 
 /// Socket constants.

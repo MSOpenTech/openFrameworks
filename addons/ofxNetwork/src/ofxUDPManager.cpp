@@ -37,7 +37,7 @@ bool ofxUDPManager::Close()
 	if (m_hSocket == INVALID_SOCKET)
 		return(false);
 
-	#ifdef TARGET_WIN32
+#if defined(TARGET_WIN32) || defined(TARGET_WINRT)
 		if(closesocket(m_hSocket) == SOCKET_ERROR)
 	#else
 		if(close(m_hSocket) == SOCKET_ERROR)
@@ -76,7 +76,7 @@ bool ofxUDPManager::SetNonBlocking(bool useNonBlocking)
 {
 	nonBlocking		= useNonBlocking;
 
-	#ifdef TARGET_WIN32
+	#if defined(TARGET_WIN32) || defined(TARGET_WINRT)
 		unsigned long arg = nonBlocking;
 		int retVal = ioctlsocket(m_hSocket,FIONBIO,&arg);
 	#else

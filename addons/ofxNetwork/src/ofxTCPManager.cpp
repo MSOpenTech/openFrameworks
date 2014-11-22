@@ -9,7 +9,7 @@ bool ofxTCPManager::m_bWinsockInit= false;
 ofxTCPManager::ofxTCPManager()
 {
   // was winsock initialized?
-  	#ifdef TARGET_WIN32
+	#if defined(TARGET_WIN32) || defined(TARGET_WINRT)
 		if (!m_bWinsockInit) {
 			unsigned short vr;
 			WSADATA	wsaData;
@@ -41,7 +41,7 @@ bool ofxTCPManager::Close()
 {
     if (m_hSocket == INVALID_SOCKET) return(true);
 
-	#ifdef TARGET_WIN32
+#if defined(TARGET_WIN32) || defined(TARGET_WINRT)
 		if(closesocket(m_hSocket) == SOCKET_ERROR)
 	#else
 		m_closing = true;
@@ -169,7 +169,7 @@ bool ofxTCPManager::SetNonBlocking(bool useNonBlocking)
 {
 	nonBlocking		= useNonBlocking;
 
-	#ifdef TARGET_WIN32
+	#if defined(TARGET_WIN32) || defined(TARGET_WINRT)
 		unsigned long arg = nonBlocking;
 		int retVal = ioctlsocket(m_hSocket,FIONBIO,&arg);
 	#else
@@ -204,12 +204,12 @@ int ofxTCPManager::Write(const char* pBuff, const int iSize)
 }
 
 //--------------------------------------------------------------------------------
-//Theo added - alternative to GetTickCount for windows
+//Theo added - alternative to GetTickCount64 for windows
 //This version returns the milliseconds since the unix epoch
 //Should be good enough for what it is being used for here
 //(mainly time comparision)
-#ifndef TARGET_WIN32
-unsigned long GetTickCount(){
+#if !defined(TARGET_WIN32) && !defined(TARGET_WINRT)
+unsigned long GetTickCount64(){
   timeb bsdTime;
   ftime(&bsdTime);
 
@@ -251,7 +251,7 @@ int ofxTCPManager::SendAll(const char* pBuff, const int iSize)
   if (m_hSocket == INVALID_SOCKET) return(SOCKET_ERROR);
 
 
-	unsigned long timestamp= GetTickCount();
+	unsigned long timestamp= GetTickCount64();
 
 	if (m_dwTimeoutSend	!= NO_TIMEOUT)
 	{
@@ -276,7 +276,7 @@ int ofxTCPManager::SendAll(const char* pBuff, const int iSize)
 		if (ret == -1) { err = ofxNetworkCheckError(); break; }
 		total += ret;
 		bytesleft -=ret;
-		if (GetTickCount() - timestamp > m_dwTimeoutSend * 1000) return SOCKET_TIMEOUT;
+		if (GetTickCount64() - timestamp > m_dwTimeoutSend * 1000) return SOCKET_TIMEOUT;
 	}
 
 	if(err == EPIPE || err == ECONNRESET || err == ECONNABORTED ){ Close(); return 0; }
@@ -319,7 +319,7 @@ int ofxTCPManager::ReceiveAll(char* pBuff, const int iSize)
 {
 	if (m_hSocket == INVALID_SOCKET) return(SOCKET_ERROR);
 
-	unsigned long timestamp= GetTickCount();
+	unsigned long timestamp= GetTickCount64();
 
 	if (m_dwTimeoutReceive	!= NO_TIMEOUT)
 	{
@@ -334,7 +334,7 @@ int ofxTCPManager::ReceiveAll(char* pBuff, const int iSize)
 	}
 	int totalBytes=0;
 
-	unsigned long stamp = GetTickCount();
+	unsigned long stamp = GetTickCount64();
 
 	do {
 		int ret= recv(m_hSocket, pBuff+totalBytes, iSize-totalBytes, 0);
@@ -343,14 +343,14 @@ int ofxTCPManager::ReceiveAll(char* pBuff, const int iSize)
 			ofxNetworkCheckError();
 			return SOCKET_ERROR;
 		}
-		if (GetTickCount() - timestamp > m_dwTimeoutReceive * 1000) return SOCKET_TIMEOUT;
+		if (GetTickCount64() - timestamp > m_dwTimeoutReceive * 1000) return SOCKET_TIMEOUT;
 		totalBytes += ret;
-		#ifndef TARGET_WIN32
+		#if !defined(TARGET_WIN32) && !defined(TARGET_WINRT)
 			usleep(20000); //should be 20ms
 		#else
 			Sleep(20);
 		#endif
-		if (GetTickCount() - stamp > 10000)
+		if (GetTickCount64() - stamp > 10000)
 			return SOCKET_TIMEOUT;
 	}while(totalBytes < iSize);
 
