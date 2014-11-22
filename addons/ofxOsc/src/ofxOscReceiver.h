@@ -31,7 +31,7 @@
 #include <deque>
 #include "ofMain.h"
 
-#ifdef TARGET_WIN32
+#if defined(TARGET_WIN32) || defined(TARGET_WINRT)
 // threads
 #include <windows.h>
 #else
@@ -89,8 +89,7 @@ private:
 	void grabMutex();
 	void releaseMutex();
 
-#ifdef TARGET_WIN32
-	// thread to listen with
+#if defined(TARGET_WIN32) || defined(TARGET_WINRT)	// thread to listen with
 	HANDLE thread;
 	// mutex for the thread queue
 	HANDLE mutex;

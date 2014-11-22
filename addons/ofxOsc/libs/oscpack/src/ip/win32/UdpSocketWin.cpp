@@ -312,7 +312,7 @@ class SocketReceiveMultiplexer::Implementation{
 	double GetCurrentTimeMs() const
 	{
 #ifndef WINCE
-		return timeGetTime(); // FIXME: bad choice if you want to run for more than 40 days
+		return (double)GetTickCount64();
 #else
         return 0;
 #endif
@@ -321,7 +321,7 @@ class SocketReceiveMultiplexer::Implementation{
 public:
     Implementation()
 	{
-		breakEvent_ = CreateEvent( NULL, FALSE, FALSE, NULL );
+		breakEvent_ = CreateEventEx(NULL, NULL, NULL, EVENT_ALL_ACCESS);
 	}
 
     ~Implementation()
@@ -382,8 +382,8 @@ public:
 		for( std::vector< std::pair< PacketListener*, UdpSocket* > >::iterator i = socketListeners_.begin();
 				i != socketListeners_.end(); ++i, ++j ){
 
-			HANDLE event = CreateEvent( NULL, FALSE, FALSE, NULL );
-			WSAEventSelect( i->second->impl_->Socket(), event, FD_READ ); // note that this makes the socket non-blocking which is why we can safely call RecieveFrom() on all sockets below
+			HANDLE event = CreateEventEx(NULL, NULL, NULL, EVENT_ALL_ACCESS);
+			WSAEventSelect(i->second->impl_->Socket(), event, FD_READ); // note that this makes the socket non-blocking which is why we can safely call RecieveFrom() on all sockets below
 			events[j] = event;
 		}
 
@@ -396,9 +396,11 @@ public:
 
 		// expiry time ms, listener
 		std::vector< std::pair< double, AttachedTimerListener > > timerQueue_;
-		for( std::vector< AttachedTimerListener >::iterator i = timerListeners_.begin();
-				i != timerListeners_.end(); ++i )
-			timerQueue_.push_back( std::make_pair( currentTimeMs + i->initialDelayMs, *i ) );
+		for (std::vector< AttachedTimerListener >::iterator i = timerListeners_.begin();
+			i != timerListeners_.end(); ++i){
+			timerQueue_.push_back(std::make_pair(currentTimeMs + i->initialDelayMs, *i));
+		}
+
 		std::sort( timerQueue_.begin(), timerQueue_.end(), CompareScheduledTimerCalls );
 
 		const int MAX_BUFFER_SIZE = 4098;
@@ -417,9 +419,13 @@ public:
                             : 0 );
             }
 
-			DWORD waitResult = WaitForMultipleObjects( (DWORD)socketListeners_.size() + 1, &events[0], FALSE, waitTime );
-			if( break_ )
+			DWORD waitResult = WaitForMultipleObjectsEx( (DWORD)socketListeners_.size() + 1, &events[0], FALSE, waitTime, FALSE );
+
+			if (break_ || waitResult == WAIT_FAILED)
+			{
+				DWORD err = GetLastError();
 				break;
+			}
 
 			if( waitResult != WAIT_TIMEOUT ){
 				for( int i = waitResult - WAIT_OBJECT_0; i < (int)socketListeners_.size(); ++i ){
