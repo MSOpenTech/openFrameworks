@@ -11,7 +11,7 @@
 #include "ofConstants.h"
 #include "ofUtils.h"
 
-#ifdef TARGET_WIN32
+#if defined(TARGET_WIN32)// || defined(TARGET_WINRT) // already defined in winsock.h
 #define ENOTCONN        WSAENOTCONN
 #define EWOULDBLOCK     WSAEWOULDBLOCK
 #define ENOBUFS         WSAENOBUFS
@@ -39,7 +39,7 @@
 #define ofxNetworkCheckError() ofxNetworkCheckErrno(__FILE__,ofToString(__LINE__))
 
 inline int ofxNetworkCheckErrno(const string & file, const string & line){
-	#ifdef TARGET_WIN32
+	#if defined(TARGET_WIN32) || defined(TARGET_WINRT)
 		int	err	= WSAGetLastError();
 	#else
 		int err = errno;
@@ -128,7 +128,7 @@ inline int ofxNetworkCheckErrno(const string & file, const string & line){
 	case EAGAIN:
 		//ofLogError("ofxNetwork") << file << ": " << line << " EAGAIN: try again";
 		break;
-#ifdef TARGET_WIN32
+#if defined(TARGET_WIN32) || defined(TARGET_WINRT)
 	case WSAEWOULDBLOCK:
 		// represents "resource temporarily unavailable", can be ignored
 		break;

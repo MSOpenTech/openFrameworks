@@ -74,8 +74,8 @@ private:
 	void shutdown();
 
 	// start the listening thread
-#ifdef TARGET_WIN32
-	static DWORD WINAPI startThread( void* ofxOscReceiverInstance );
+#if defined(TARGET_WIN32) || defined(TARGET_WINRT)
+	static DWORD WINAPI startThread(void* ofxOscReceiverInstance);
 #else
 	static void* startThread( void* ofxOscReceiverInstance );
 #endif
@@ -89,7 +89,8 @@ private:
 	void grabMutex();
 	void releaseMutex();
 
-#if defined(TARGET_WIN32) || defined(TARGET_WINRT)	// thread to listen with
+#if defined(TARGET_WIN32) || defined(TARGET_WINRT)
+	// thread to listen with
 	HANDLE thread;
 	// mutex for the thread queue
 	HANDLE mutex;
