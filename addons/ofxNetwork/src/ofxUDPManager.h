@@ -67,7 +67,7 @@ x) Close()
 #include <wchar.h>
 #include <stdio.h>
 
-#ifndef TARGET_WIN32
+#if !defined(TARGET_WIN32) && !defined(TARGET_WINRT)
 
 	//unix includes - works for osx should be same for *nix
 	#include <ctype.h>
@@ -152,7 +152,7 @@ public:
 protected:
 	int m_iListenPort;
 
-	#ifdef TARGET_WIN32
+	#if defined(TARGET_WIN32) || defined(TARGET_WINRT)
 		SOCKET m_hSocket;
 	#else
 		int m_hSocket;

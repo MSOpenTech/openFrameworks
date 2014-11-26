@@ -50,8 +50,11 @@
 #include "Poco/DateTimeFormatter.h"
 #include "Poco/DateTimeParser.h"
 #include "Poco/String.h"
+#include "Poco/Any.h"
 #include "Poco/Exception.h"
 #include <vector>
+#include <list>
+#include <deque>
 #include <typeinfo>
 #undef min
 #undef max
@@ -65,8 +68,56 @@ namespace Dynamic {
 class Var;
 
 
+namespace Impl {
+
+
+bool Foundation_API isJSONString(const Var& any);
+	/// Returns true for values that should be JSON-formatted as string.
+
+
+void Foundation_API appendJSONKey(std::string& val, const Var& any);
+	/// Converts the any to a JSON key (i.e. wraps it into double quotes 
+	/// regardless of the underlying type) and appends it to val.
+
+
 void Foundation_API appendJSONString(std::string& val, const Var& any);
-	/// Converts the any to a JSON value and adds it to val
+	/// Converts the any to a JSON string (i.e. wraps it into double quotes) 
+	/// regardless of the underlying type) and appends it to val.
+
+
+void Foundation_API appendJSONValue(std::string& val, const Var& any);
+	/// Converts the any to a JSON value (if underlying type qualifies 
+	/// as string - see isJSONString() - , it is wrapped into double quotes) 
+	/// and appends it to val
+
+
+template <typename C>
+void containerToJSON(C& cont, std::string& val)
+{
+	// Serialize in JSON format. Note: although this is a vector<T>, the code only 
+	// supports vector<Var>. Total specialization is not possible
+	// because of the cyclic dependency between Var and VarHolder
+
+	// JSON format definition: [ n times: elem ',' ], no ',' for last elem
+	val.append("[ ");
+	typename C::const_iterator it = cont.begin();
+	typename C::const_iterator itEnd = cont.end();
+	if (!cont.empty())
+	{
+		appendJSONValue(val, *it);
+		++it;
+	}
+	for (; it != itEnd; ++it)
+	{
+		
+		val.append(", ");
+		appendJSONValue(val, *it);
+	}
+	val.append(" ]");
+}
+
+
+} // namespace Impl
 
 
 class Foundation_API VarHolder
@@ -86,16 +137,22 @@ class Foundation_API VarHolder
 	/// throw BadCastException.
 {
 public:
+	typedef Var ArrayValueType;
+
 	virtual ~VarHolder();
 		/// Destroys the VarHolder.
 
-	virtual VarHolder* clone() const;
-		/// Throws NotImplementedException. Implementation should
+	virtual VarHolder* clone(Placeholder<VarHolder>* pHolder = 0) const = 0;
+		/// Implementation must implement this function to
 		/// deep-copy the VarHolder.
-		
-	virtual const std::type_info& type() const;
-		/// Throws NotImplementedException. Implementation should
-		/// return the type information for the stored content.
+		/// If small object optimization is enabled (i.e. if 
+		/// POCO_NO_SOO is not defined), VarHolder will be
+		/// instantiated in-place if it's size is smaller
+		/// than POCO_SMALL_OBJECT_SIZE.
+
+	virtual const std::type_info& type() const = 0;
+		/// Implementation must return the type information
+		/// (typeid) for the stored content.
 
 	virtual void convert(Int8& val) const;
 		/// Throws BadCastException. Must be overriden in a type
@@ -142,12 +199,15 @@ public:
 		/// specialization in order to suport the conversion.
 
 #ifndef POCO_LONG_IS_64_BIT
+
 	void convert(long& val) const;
 		/// Calls convert(Int32).
 
 	void convert(unsigned long& val) const;
 		/// Calls convert(UInt32).
+
 #endif
+
 	virtual void convert(bool& val) const;
 		/// Throws BadCastException. Must be overriden in a type
 		/// specialization in order to suport the conversion.
@@ -169,6 +229,17 @@ public:
 		/// specialization in order to suport the conversion.
 
 	virtual bool isArray() const;
+		/// Returns true.
+
+	virtual bool isVector() const;
+		/// Returns false. Must be properly overriden in a type
+		/// specialization in order to suport the diagnostic.
+
+	virtual bool isList() const;
+		/// Returns false. Must be properly overriden in a type
+		/// specialization in order to suport the diagnostic.
+
+	virtual bool isDeque() const;
 		/// Returns false. Must be properly overriden in a type
 		/// specialization in order to suport the diagnostic.
 
@@ -192,9 +263,42 @@ public:
 		/// Returns false. Must be properly overriden in a type
 		/// specialization in order to suport the diagnostic.
 
+	virtual std::size_t size() const;
+		/// Returns 1 iff Var is not empty or this function overriden.
+
 protected:
 	VarHolder();
 		/// Creates the VarHolder.
+
+	template <typename T>
+	VarHolder* cloneHolder(Placeholder<VarHolder>* pVarHolder, const T& val) const
+		/// Instantiates value holder wrapper. If size of the wrapper is
+		/// larger than POCO_SMALL_OBJECT_SIZE, holder is instantiated on
+		/// the heap, otherwise it is instantiated in-place (in the 
+		/// pre-allocated buffer inside the holder).
+		/// 
+		/// Called from clone() member function of the implementation when
+		/// smal object optimization is enabled.
+	{
+#ifdef POCO_NO_SOO
+		(void)pVarHolder;
+		return new VarHolderImpl<T>(val);
+#else
+		poco_check_ptr (pVarHolder);
+		if ((sizeof(VarHolderImpl<T>) <= Placeholder<T>::Size::value))
+		{
+			new ((VarHolder*) pVarHolder->holder) VarHolderImpl<T>(val);
+			pVarHolder->setLocal(true);
+			return (VarHolder*) pVarHolder->holder;
+		}
+		else
+		{
+			pVarHolder->pHolder = new VarHolderImpl<T>(val);
+			pVarHolder->setLocal(false);
+			return pVarHolder->pHolder;
+		}
+#endif
+	}
 
 	template <typename F, typename T>
 	void convertToSmaller(const F& from, T& to) const
@@ -209,11 +313,16 @@ protected:
 		poco_static_assert (std::numeric_limits<T>::is_signed);
 
 		if (std::numeric_limits<F>::is_integer)
+		{
 			checkUpperLimit<F,T>(from); 
+			checkLowerLimit<F,T>(from);
+		}
 		else
+		{
 			checkUpperLimitFloat<F,T>(from); 
-
-		checkLowerLimit<F,T>(from);
+			checkLowerLimitFloat<F,T>(from); 
+		}
+		
 		to = static_cast<T>(from);
 	}
 
@@ -311,6 +420,13 @@ private:
 	}
 
 	template <typename F, typename T>
+	void checkLowerLimitFloat(const F& from) const
+	{
+		if (from < -std::numeric_limits<T>::max()) 
+			throw RangeException("Value too small.");
+	}
+
+	template <typename F, typename T>
 	void checkLowerLimit(const F& from) const
 	{
 		if (from < std::numeric_limits<T>::min()) 
@@ -323,84 +439,74 @@ private:
 // inlines
 //
 
-inline VarHolder* VarHolder::clone() const
-{
-	throw NotImplementedException("Not implemented: VarHolder::clone()");
-}
 
-
-inline const std::type_info& VarHolder::type() const
-{
-	throw NotImplementedException("Not implemented: VarHolder::type()");
-}
-
-inline void VarHolder::convert(Int8& val) const
+inline void VarHolder::convert(Int8& /*val*/) const
 {
 	throw BadCastException("Can not convert to Int8");
 }
 
 
-inline void VarHolder::convert(Int16& val) const
+inline void VarHolder::convert(Int16& /*val*/) const
 {
 	throw BadCastException("Can not convert to Int16");
 }
 
 
-inline void VarHolder::convert(Int32& val) const
+inline void VarHolder::convert(Int32& /*val*/) const
 {
 	throw BadCastException("Can not convert to Int32");
 }
 
 
-inline void VarHolder::convert(Int64& val) const
+inline void VarHolder::convert(Int64& /*val*/) const
 {
 	throw BadCastException("Can not convert to Int64");
 }
 
 
-inline void VarHolder::convert(UInt8& val) const
+inline void VarHolder::convert(UInt8& /*val*/) const
 {
 	throw BadCastException("Can not convert to UInt8");
 }
 
 
-inline void VarHolder::convert(UInt16& val) const
+inline void VarHolder::convert(UInt16& /*val*/) const
 {
 	throw BadCastException("Can not convert to UInt16");
 }
 
 
-inline void VarHolder::convert(UInt32& val) const
+inline void VarHolder::convert(UInt32& /*val*/) const
 {
 	throw BadCastException("Can not convert to UInt32");
 }
 
 
-inline void VarHolder::convert(UInt64& val) const
+inline void VarHolder::convert(UInt64& /*val*/) const
 {
 	throw BadCastException("Can not convert to UInt64");
 }
 
 
-inline void VarHolder::convert(DateTime& val) const
+inline void VarHolder::convert(DateTime& /*val*/) const
 {
 	throw BadCastException("Can not convert to DateTime");
 }
 
 
-inline void VarHolder::convert(LocalDateTime& val) const
+inline void VarHolder::convert(LocalDateTime& /*val*/) const
 {
 	throw BadCastException("Can not convert to LocalDateTime");
 }
 
 
-inline void VarHolder::convert(Timestamp& val) const
+inline void VarHolder::convert(Timestamp& /*val*/) const
 {
 	throw BadCastException("Can not convert to Timestamp");
 }
 
-
 #ifndef POCO_LONG_IS_64_BIT
+
 inline void VarHolder::convert(long& val) const
 {
 	Int32 tmp;
@@ -415,40 +521,58 @@ inline void VarHolder::convert(unsigned long& val) const
 	convert(tmp);
 	val = tmp;
 }
+
 #endif
 
-
-inline void VarHolder::convert(bool& val) const
+inline void VarHolder::convert(bool& /*val*/) const
 {
 	throw BadCastException("Can not convert to bool");
 }
 
 
-inline void VarHolder::convert(float& val) const
+inline void VarHolder::convert(float& /*val*/) const
 {
 	throw BadCastException("Can not convert to float");
 }
 
 
-inline void VarHolder::convert(double& val) const
+inline void VarHolder::convert(double& /*val*/) const
 {
 	throw BadCastException("Can not convert to double");
 }
 
 
-inline void VarHolder::convert(char& val) const
+inline void VarHolder::convert(char& /*val*/) const
 {
 	throw BadCastException("Can not convert to char");
 }
 
 
-inline void VarHolder::convert(std::string& val) const
+inline void VarHolder::convert(std::string& /*val*/) const
 {
 	throw BadCastException("Can not convert to std::string");
 }
 
 
 inline bool VarHolder::isArray() const
+{
+	return true;
+}
+
+
+inline bool VarHolder::isVector() const
+{
+	return false;
+}
+
+
+inline bool VarHolder::isList() const
+{
+	return false;
+}
+
+
+inline bool VarHolder::isDeque() const
 {
 	return false;
 }
@@ -480,6 +604,11 @@ inline bool VarHolder::isNumeric() const
 inline bool VarHolder::isString() const
 {
 	return false;
+}
+
+inline std::size_t VarHolder::size() const
+{
+	return 1u;
 }
 
 
@@ -518,9 +647,9 @@ public:
 		return typeid(T);
 	}
 
-	VarHolder* clone() const
+	VarHolder* clone(Placeholder<VarHolder>* pVarHolder = 0) const
 	{
-		return new VarHolderImpl(_val);
+		return cloneHolder(pVarHolder, _val);
 	}
 
 	const T& value() const
@@ -619,9 +748,9 @@ public:
 		val = NumberFormatter::format(_val);
 	}
 
-	VarHolder* clone() const
+	VarHolder* clone(Placeholder<VarHolder>* pVarHolder = 0) const
 	{
-		return new VarHolderImpl(_val);
+		return cloneHolder(pVarHolder, _val);
 	}
 	
 	const Int8& value() const
@@ -752,9 +881,9 @@ public:
 		val = NumberFormatter::format(_val);
 	}
 
-	VarHolder* clone() const
+	VarHolder* clone(Placeholder<VarHolder>* pVarHolder = 0) const
 	{
-		return new VarHolderImpl(_val);
+		return cloneHolder(pVarHolder, _val);
 	}
 
 	const Int16& value() const
@@ -885,9 +1014,9 @@ public:
 		val = NumberFormatter::format(_val);
 	}
 
-	VarHolder* clone() const
+	VarHolder* clone(Placeholder<VarHolder>* pVarHolder = 0) const
 	{
-		return new VarHolderImpl(_val);
+		return cloneHolder(pVarHolder, _val);
 	}
 
 	const Int32& value() const
@@ -1033,9 +1162,9 @@ public:
 		val = Timestamp(_val);
 	}
 
-	VarHolder* clone() const
+	VarHolder* clone(Placeholder<VarHolder>* pVarHolder = 0) const
 	{
-		return new VarHolderImpl(_val);
+		return cloneHolder(pVarHolder, _val);
 	}
 
 	const Int64& value() const
@@ -1166,9 +1295,9 @@ public:
 		val = NumberFormatter::format(_val);
 	}
 
-	VarHolder* clone() const
+	VarHolder* clone(Placeholder<VarHolder>* pVarHolder = 0) const
 	{
-		return new VarHolderImpl(_val);
+		return cloneHolder(pVarHolder, _val);
 	}
 
 	const UInt8& value() const
@@ -1299,9 +1428,9 @@ public:
 		val = NumberFormatter::format(_val);
 	}
 
-	VarHolder* clone() const
+	VarHolder* clone(Placeholder<VarHolder>* pVarHolder = 0) const
 	{
-		return new VarHolderImpl(_val);
+		return cloneHolder(pVarHolder, _val);
 	}
 
 	const UInt16& value() const
@@ -1432,9 +1561,9 @@ public:
 		val = NumberFormatter::format(_val);
 	}
 
-	VarHolder* clone() const
+	VarHolder* clone(Placeholder<VarHolder>* pVarHolder = 0) const
 	{
-		return new VarHolderImpl(_val);
+		return cloneHolder(pVarHolder, _val);
 	}
 
 	const UInt32& value() const
@@ -1586,9 +1715,9 @@ public:
 		val = Timestamp(tmp);
 	}
 
-	VarHolder* clone() const
+	VarHolder* clone(Placeholder<VarHolder>* pVarHolder = 0) const
 	{
-		return new VarHolderImpl(_val);
+		return cloneHolder(pVarHolder, _val);
 	}
 
 	const UInt64& value() const
@@ -1717,9 +1846,9 @@ public:
 		val = (_val ? "true" : "false");
 	}
 
-	VarHolder* clone() const
+	VarHolder* clone(Placeholder<VarHolder>* pVarHolder = 0) const
 	{
-		return new VarHolderImpl(_val);
+		return cloneHolder(pVarHolder, _val);
 	}
 
 	const bool& value() const
@@ -1851,9 +1980,9 @@ public:
 		val = NumberFormatter::format(_val);
 	}
 
-	VarHolder* clone() const
+	VarHolder* clone(Placeholder<VarHolder>* pVarHolder = 0) const
 	{
-		return new VarHolderImpl(_val);
+		return cloneHolder(pVarHolder, _val);
 	}
 
 	const float& value() const
@@ -1991,9 +2120,9 @@ public:
 		val = NumberFormatter::format(_val);
 	}
 
-	VarHolder* clone() const
+	VarHolder* clone(Placeholder<VarHolder>* pVarHolder = 0) const
 	{
-		return new VarHolderImpl(_val);
+		return cloneHolder(pVarHolder, _val);
 	}
 
 	const double& value() const
@@ -2122,9 +2251,9 @@ public:
 		val = std::string(1, _val);
 	}
 
-	VarHolder* clone() const
+	VarHolder* clone(Placeholder<VarHolder>* pVarHolder = 0) const
 	{
-		return new VarHolderImpl(_val);
+		return cloneHolder(pVarHolder, _val);
 	}
 
 	const char& value() const
@@ -2171,8 +2300,8 @@ private:
 };
 
 
-template <>
-class VarHolderImpl<std::string>: public VarHolder
+template <typename T>
+class VarHolderImpl<std::basic_string<T> >: public VarHolder
 {
 public:
 	VarHolderImpl(const char* pVal): _val(pVal)
@@ -2301,9 +2430,9 @@ public:
 		ts = tmp.timestamp();
 	}
 
-	VarHolder* clone() const
+	VarHolder* clone(Placeholder<VarHolder>* pVarHolder = 0) const
 	{
-		return new VarHolderImpl(_val);
+		return cloneHolder(pVarHolder, _val);
 	}
 
 	const std::string& value() const
@@ -2311,34 +2440,28 @@ public:
 		return _val;
 	}
 
-	bool isArray() const
-	{
-		return false;
-	}
-
-	bool isStruct() const
-	{
-		return false;
-	}
-
-	bool isInteger() const
-	{
-		return false;
-	}
-
-	bool isSigned() const
-	{
-		return false;
-	}
-
-	bool isNumeric() const
-	{
-		return false;
-	}
-
 	bool isString() const
 	{
 		return true;
+	}
+
+	std::size_t size() const
+	{
+		return _val.length();
+	}
+
+	T& operator[](std::string::size_type n)
+	{
+		if (n < size()) return _val.operator[](n);
+
+		throw RangeException("String index out of range");
+	}
+
+	const T& operator[](std::string::size_type n) const
+	{
+		if (n < size()) return _val.operator[](n);
+
+		throw RangeException("String index out of range");
 	}
 
 private:
@@ -2346,7 +2469,7 @@ private:
 	VarHolderImpl(const VarHolderImpl&);
 	VarHolderImpl& operator = (const VarHolderImpl&);
 
-	std::string _val;
+	std::basic_string<T> _val;
 };
 
 
@@ -2437,9 +2560,9 @@ public:
 		val = NumberFormatter::format(_val);
 	}
 
-	VarHolder* clone() const
+	VarHolder* clone(Placeholder<VarHolder>* pVarHolder = 0) const
 	{
-		return new VarHolderImpl(_val);
+		return cloneHolder(pVarHolder, _val);
 	}
 
 	const long& value() const
@@ -2570,9 +2693,9 @@ public:
 		val = NumberFormatter::format(_val);
 	}
 
-	VarHolder* clone() const
+	VarHolder* clone(Placeholder<VarHolder>* pVarHolder = 0) const
 	{
-		return new VarHolderImpl(_val);
+		return cloneHolder(pVarHolder, _val);
 	}
 
 	const unsigned long& value() const
@@ -2641,31 +2764,12 @@ public:
 
 	void convert(std::string& val) const
 	{
-		// Serialize in JSON format: note: although this is a vector<T>, the code only 
-		// supports vector<Var>. Total specialization is not possible
-		// because of the cyclic dependency between Var and VarHolder
-
-		// JSON format definition: [ n times: elem ',' ], no ',' for last elem
-		val.append("[ ");
-		typename std::vector<T>::const_iterator it = _val.begin();
-		typename std::vector<T>::const_iterator itEnd = _val.end();
-		if (!_val.empty())
-		{
-			appendJSONString(val, *it);
-			++it;
-		}
-		for (; it != itEnd; ++it)
-		{
-			
-			val.append(", ");
-			appendJSONString(val, *it);
-		}
-		val.append(" ]");
+		Impl::containerToJSON(_val, val);
 	}
 
-	VarHolder* clone() const
+	VarHolder* clone(Placeholder<VarHolder>* pVarHolder = 0) const
 	{
-		return new VarHolderImpl(_val);
+		return cloneHolder(pVarHolder, _val);
 	}
 	
 	const std::vector<T>& value() const
@@ -2673,44 +2777,28 @@ public:
 		return _val;
 	}
 
-	bool isArray() const
+	bool isVector() const
 	{
 		return true;
 	}
 
-	bool isStruct() const
+	std::size_t size() const
 	{
-		return false;
-	}
-
-	bool isInteger() const
-	{
-		return false;
-	}
-
-	bool isSigned() const
-	{
-		return false;
-	}
-
-	bool isNumeric() const
-	{
-		return false;
-	}
-
-	bool isString() const
-	{
-		return false;
+		return _val.size();
 	}
 
 	T& operator[](typename std::vector<T>::size_type n)
 	{
-		return _val.operator[](n);
+		if (n < size()) return _val.operator[](n);
+
+		throw RangeException("List index out of range");
 	}
 
 	const T& operator[](typename std::vector<T>::size_type n) const
 	{
-		return _val.operator[](n);
+		if (n < size()) return _val.operator[](n);
+
+		throw RangeException("List index out of range");
 	}
 
 private:
@@ -2719,6 +2807,146 @@ private:
 	VarHolderImpl& operator = (const VarHolderImpl&);
 
 	std::vector<T> _val;
+};
+
+
+template <typename T>
+class VarHolderImpl<std::list<T> >: public VarHolder
+{
+public:
+	VarHolderImpl(const std::list<T>& val): _val(val)
+	{
+	}
+
+	~VarHolderImpl()
+	{
+	}
+	
+	const std::type_info& type() const
+	{
+		return typeid(std::list<T>);
+	}
+
+	void convert(std::string& val) const
+	{
+		Impl::containerToJSON(_val, val);
+	}
+
+	VarHolder* clone(Placeholder<VarHolder>* pVarHolder = 0) const
+	{
+		return cloneHolder(pVarHolder, _val);
+	}
+	
+	const std::list<T>& value() const
+	{
+		return _val;
+	}
+
+	bool isList() const
+	{
+		return true;
+	}
+
+	std::size_t size() const
+	{
+		return _val.size();
+	}
+
+	T& operator[](typename std::list<T>::size_type n)
+	{
+		if (n >= size())
+			throw RangeException("List index out of range");
+
+		typename std::list<T>::size_type counter = 0;
+		typename std::list<T>::iterator it = _val.begin();
+		for (; counter < n; ++counter) ++it;
+
+		return *it;
+	}
+
+	const T& operator[](typename std::list<T>::size_type n) const
+	{
+		if (n >= size())
+			throw RangeException("List index out of range");
+
+		typename std::list<T>::size_type counter = 0;
+		typename std::list<T>::const_iterator it = _val.begin();
+		for (; counter < n; ++counter) ++it;
+
+		return *it;
+	}
+
+private:
+	VarHolderImpl();
+	VarHolderImpl(const VarHolderImpl&);
+	VarHolderImpl& operator = (const VarHolderImpl&);
+
+	std::list<T> _val;
+};
+
+
+template <typename T>
+class VarHolderImpl<std::deque<T> >: public VarHolder
+{
+public:
+	VarHolderImpl(const std::deque<T>& val): _val(val)
+	{
+	}
+
+	~VarHolderImpl()
+	{
+	}
+	
+	const std::type_info& type() const
+	{
+		return typeid(std::deque<T>);
+	}
+
+	void convert(std::string& val) const
+	{
+		Impl::containerToJSON(_val, val);
+	}
+
+	VarHolder* clone(Placeholder<VarHolder>* pVarHolder = 0) const
+	{
+		return cloneHolder(pVarHolder, _val);
+	}
+	
+	const std::deque<T>& value() const
+	{
+		return _val;
+	}
+
+	bool isDeque() const
+	{
+		return true;
+	}
+
+	std::size_t size() const
+	{
+		return _val.size();
+	}
+
+	T& operator[](typename std::deque<T>::size_type n)
+	{
+		if (n < size()) return _val.operator[](n);
+
+		throw RangeException("List index out of range");
+	}
+
+	const T& operator[](typename std::deque<T>::size_type n) const
+	{
+		if (n < size()) return _val.operator[](n);
+
+		throw RangeException("List index out of range");
+	}
+
+private:
+	VarHolderImpl();
+	VarHolderImpl(const VarHolderImpl&);
+	VarHolderImpl& operator = (const VarHolderImpl&);
+
+	std::deque<T> _val;
 };
 
 
@@ -2739,17 +2967,17 @@ public:
 		return typeid(DateTime);
 	}
 
-	void convert(Int8& val) const
+	void convert(Int8& /*val*/) const
 	{
 		throw BadCastException();
 	}
 
-	void convert(Int16& val) const
+	void convert(Int16& /*val*/) const
 	{
 		throw BadCastException();
 	}
 	
-	void convert(Int32& val) const
+	void convert(Int32& /*val*/) const
 	{
 		throw BadCastException();
 	}
@@ -2784,9 +3012,9 @@ public:
 		ts = _val.timestamp();
 	}
 
-	VarHolder* clone() const
+	VarHolder* clone(Placeholder<VarHolder>* pVarHolder = 0) const
 	{
-		return new VarHolderImpl(_val);
+		return cloneHolder(pVarHolder, _val);
 	}
 	
 	const DateTime& value() const
@@ -2880,9 +3108,9 @@ public:
 		ts = _val.timestamp();
 	}
 
-	VarHolder* clone() const
+	VarHolder* clone(Placeholder<VarHolder>* pVarHolder = 0) const
 	{
-		return new VarHolderImpl(_val);
+		return cloneHolder(pVarHolder, _val);
 	}
 	
 	const LocalDateTime& value() const
@@ -2976,9 +3204,9 @@ public:
 		ts = _val;
 	}
 
-	VarHolder* clone() const
+	VarHolder* clone(Placeholder<VarHolder>* pVarHolder = 0) const
 	{
-		return new VarHolderImpl(_val);
+		return cloneHolder(pVarHolder, _val);
 	}
 	
 	const Timestamp& value() const
@@ -3023,6 +3251,12 @@ private:
 
 	Timestamp _val;
 };
+
+
+typedef std::vector<Var> Vector;
+typedef std::deque<Var>  Deque;
+typedef std::list<Var>   List;
+typedef Vector           Array;
 
 
 } } // namespace Poco::Dynamic

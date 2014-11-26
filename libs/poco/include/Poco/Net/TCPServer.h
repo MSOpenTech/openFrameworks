@@ -98,9 +98,27 @@ class Net_API TCPServer: public Poco::Runnable
 	/// Already served connections, however, will continue being served.
 {
 public:
+	TCPServer(TCPServerConnectionFactory::Ptr pFactory, Poco::UInt16 portNumber = 0, TCPServerParams::Ptr pParams = 0);
+		/// Creates the TCPServer, with ServerSocket listening on the given port.
+		/// Default port is zero, allowing any availble port. The port number
+		/// can be queried through TCPServer::port() member.
+		///
+		/// The server takes ownership of the TCPServerConnectionFactory
+		/// and deletes it when it's no longer needed.
+		///
+		/// The server also takes ownership of the TCPServerParams object.
+		/// If no TCPServerParams object is given, the server's TCPServerDispatcher
+		/// creates its own one.
+		///
+		/// New threads are taken from the default thread pool.
+
 	TCPServer(TCPServerConnectionFactory::Ptr pFactory, const ServerSocket& socket, TCPServerParams::Ptr pParams = 0);
 		/// Creates the TCPServer, using the given ServerSocket.
 		///
+		/// The server takes ownership of the TCPServerConnectionFactory
+		/// and deletes it when it's no longer needed.
+		///
+		/// The server also takes ownership of the TCPServerParams object.
 		/// If no TCPServerParams object is given, the server's TCPServerDispatcher
 		/// creates its own one.
 		///
@@ -109,6 +127,10 @@ public:
 	TCPServer(TCPServerConnectionFactory::Ptr pFactory, Poco::ThreadPool& threadPool, const ServerSocket& socket, TCPServerParams::Ptr pParams = 0);
 		/// Creates the TCPServer, using the given ServerSocket.
 		///
+		/// The server takes ownership of the TCPServerConnectionFactory
+		/// and deletes it when it's no longer needed.
+		///
+		/// The server also takes ownership of the TCPServerParams object.
 		/// If no TCPServerParams object is given, the server's TCPServerDispatcher
 		/// creates its own one.
 		///
@@ -116,11 +138,11 @@ public:
 
 	virtual ~TCPServer();
 		/// Destroys the TCPServer and its TCPServerConnectionFactory.
-				
+
 	const TCPServerParams& params() const;
 		/// Returns a const reference to the TCPServerParam object
 		/// used by the server's TCPServerDispatcher.	
-				
+
 	void start();
 		/// Starts the server. A new thread will be
 		/// created that waits for and accepts incoming
@@ -128,7 +150,7 @@ public:
 		///
 		/// Before start() is called, the ServerSocket passed to
 		/// TCPServer must have been bound and put into listening state.
-		
+
 	void stop();
 		/// Stops the server.
 		///
@@ -155,6 +177,9 @@ public:
 	int refusedConnections() const;
 		/// Returns the number of refused connections.
 
+	const ServerSocket& socket() const;
+		/// Returns the underlying server socket.
+
 	Poco::UInt16 port() const;
 		/// Returns the port the server socket listens on.
 
@@ -178,6 +203,12 @@ private:
 	Poco::Thread         _thread;
 	bool                 _stopped;
 };
+
+
+inline const ServerSocket& TCPServer::socket() const
+{
+	return _socket;
+}
 
 
 inline Poco::UInt16 TCPServer::port() const

@@ -151,11 +151,11 @@ private:
 		,bInNotify(false)
 		,serializable(true){};
 
-		Value(string name, ParameterType v, ParameterType min, ParameterType max)
+		Value(string name, ParameterType v, ParameterType mn, ParameterType mx)
 		:name(name)
 		,value(v)
-		,min(min)
-		,max(max)
+		,(min)(mn)
+		,(max)(mx)
 		,bInNotify(false)
 		,serializable(true){};
 

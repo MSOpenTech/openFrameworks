@@ -1,7 +1,7 @@
 //
 // Data.h
 //
-// $Id: //poco/1.4/Data/include/Poco/Data/Data.h#1 $
+// $Id: //poco/Main/Data/include/Poco/Data/Data.h#4 $
 //
 // Library: Data
 // Package: DataCore
@@ -63,7 +63,11 @@
 
 
 #if !defined(Data_API)
-	#define Data_API
+	#if !defined(POCO_NO_GCC_API_ATTRIBUTE) && defined (__GNUC__) && (__GNUC__ >= 4)
+		#define Data_API __attribute__ ((visibility ("default")))
+	#else
+		#define Data_API
+	#endif
 #endif
 
 

@@ -1,7 +1,7 @@
 //
 // MetaColumn.h
 //
-// $Id: //poco/1.4/Data/include/Poco/Data/MetaColumn.h#1 $
+// $Id: //poco/Main/Data/include/Poco/Data/MetaColumn.h#5 $
 //
 // Library: Data
 // Package: DataCore
@@ -67,6 +67,10 @@ public:
 		FDT_DOUBLE,
 		FDT_STRING,
 		FDT_BLOB,
+		FDT_CLOB,
+		FDT_DATE,
+		FDT_TIME,
+		FDT_TIMESTAMP,
 		FDT_UNKNOWN
 	};
 

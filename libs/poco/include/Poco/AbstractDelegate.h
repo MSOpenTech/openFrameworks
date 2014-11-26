@@ -55,7 +55,7 @@ public:
 	{
 	}
 
-	AbstractDelegate(const AbstractDelegate& del)
+	AbstractDelegate(const AbstractDelegate& /*del*/)
 	{
 	}
 
@@ -94,7 +94,7 @@ public:
 	{
 	}
 
-	AbstractDelegate(const AbstractDelegate& del)
+	AbstractDelegate(const AbstractDelegate&)
 	{
 	}
 

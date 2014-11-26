@@ -41,6 +41,11 @@
 
 
 #include "Poco/Util/Util.h"
+
+
+#ifndef POCO_UTIL_NO_XMLCONFIGURATION
+
+
 #include "Poco/Util/MapConfiguration.h"
 #include "Poco/DOM/Document.h"
 #include "Poco/DOM/AutoPtr.h"
@@ -212,6 +217,9 @@ private:
 
 
 } } // namespace Poco::Util
+
+
+#endif // POCO_UTIL_NO_XMLCONFIGURATION
 
 
 #endif // Util_XMLConfiguration_INCLUDED

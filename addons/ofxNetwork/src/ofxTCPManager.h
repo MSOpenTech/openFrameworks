@@ -47,7 +47,7 @@ SetTimeoutReceive()
 #include <wchar.h>
 #include <stdio.h>
 
-#ifndef TARGET_WIN32
+#if !defined(TARGET_WIN32) && !defined(TARGET_WINRT)
 
 	//unix includes - works for osx should be same for *nix
 	#include <ctype.h>
@@ -112,7 +112,7 @@ public:
   InetAddr(const wchar_t* pStrIP, const unsigned short usPort= 0) {
 		char szStrIP[32];
 
-		#ifdef TARGET_WIN32
+		#if defined(TARGET_WIN32) || defined(TARGET_WINRT)
 			WideCharToMultiByte(CP_ACP, 0, pStrIP, (int)wcslen(pStrIP) + 1, szStrIP, 32, 0, 0);
 		#else
 			//theo note:
@@ -210,7 +210,7 @@ private:
   int m_iListenPort;
   int m_iMaxConnections;
 
-  #ifdef TARGET_WIN32
+#if defined(TARGET_WIN32) || defined(TARGET_WINRT)
     SOCKET m_hSocket;
   #else
 	int m_hSocket;

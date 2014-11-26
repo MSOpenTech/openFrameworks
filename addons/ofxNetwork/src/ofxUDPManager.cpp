@@ -10,7 +10,7 @@ bool ofxUDPManager::m_bWinsockInit= false;
 ofxUDPManager::ofxUDPManager()
 {
 	// was winsock initialized?
-	#ifdef TARGET_WIN32
+	#if defined(TARGET_WIN32) || defined(TARGET_WINRT)
 		if (!m_bWinsockInit) {
 			unsigned short vr;
 			WSADATA	wsaData;
@@ -37,7 +37,7 @@ bool ofxUDPManager::Close()
 	if (m_hSocket == INVALID_SOCKET)
 		return(false);
 
-	#ifdef TARGET_WIN32
+	#if defined(TARGET_WIN32) || defined(TARGET_WINRT)
 		if(closesocket(m_hSocket) == SOCKET_ERROR)
 	#else
 		if(close(m_hSocket) == SOCKET_ERROR)
@@ -76,7 +76,7 @@ bool ofxUDPManager::SetNonBlocking(bool useNonBlocking)
 {
 	nonBlocking		= useNonBlocking;
 
-	#ifdef TARGET_WIN32
+	#if defined(TARGET_WIN32) || defined(TARGET_WINRT)
 		unsigned long arg = nonBlocking;
 		int retVal = ioctlsocket(m_hSocket,FIONBIO,&arg);
 	#else
@@ -279,8 +279,8 @@ int	ofxUDPManager::Receive(char* pBuff, const int iSize)
 		}
 	}*/
 
-	#ifndef TARGET_WIN32
-		socklen_t nLen= sizeof(sockaddr);
+	#if !defined(TARGET_WIN32) && !defined(TARGET_WINRT)
+	socklen_t nLen = sizeof(sockaddr);
 	#else
 		int	nLen= sizeof(sockaddr);
 	#endif
@@ -340,8 +340,8 @@ int	ofxUDPManager::GetMaxMsgSize()
 
 	int	sizeBuffer=0;
 
-	#ifndef TARGET_WIN32
-		socklen_t size = sizeof(int);
+	#if !defined(TARGET_WIN32) && !defined(TARGET_WINRT)
+	socklen_t size = sizeof(int);
 	#else
 		int size = sizeof(int);
 	#endif
@@ -358,8 +358,8 @@ int	ofxUDPManager::GetReceiveBufferSize()
 
 	int	sizeBuffer=0;
 
-	#ifndef TARGET_WIN32
-		socklen_t size = sizeof(int);
+	#if !defined(TARGET_WIN32) && !defined(TARGET_WINRT)
+	socklen_t size = sizeof(int);
 	#else
 		int size = sizeof(int);
 	#endif
@@ -389,8 +389,8 @@ int	ofxUDPManager::GetSendBufferSize()
 
 	int	sizeBuffer=0;
 
-	#ifndef TARGET_WIN32
-		socklen_t size = sizeof(int);
+	#if !defined(TARGET_WIN32) && !defined(TARGET_WINRT)
+	socklen_t size = sizeof(int);
 	#else
 		int size = sizeof(int);
 	#endif
@@ -453,8 +453,8 @@ int ofxUDPManager::GetTTL()
 
 	int nTTL;
 
-	#ifndef TARGET_WIN32
-		socklen_t nSize = sizeof(int);
+	#if !defined(TARGET_WIN32) && !defined(TARGET_WINRT)
+	socklen_t nSize = sizeof(int);
 	#else
 		int nSize = sizeof(int);
 	#endif

@@ -9,7 +9,7 @@
 //#define STR_END_MSG "[/TCP]"
 //#define STR_END_MSG_LEN 6
 
-#ifndef TARGET_WIN32
+#if !defined(TARGET_WIN32) && !defined(TARGET_WINRT)
 	#define TCP_CONNRESET ECONNRESET
 #else
 	#define TCP_CONNRESET WSAECONNRESET

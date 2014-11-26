@@ -59,13 +59,13 @@ namespace AngleApp
 	void Renderer::OnPointerMoved(PointerEventArgs^ e)
 	{
 		ofAppWinRTWindow* window = reinterpret_cast<ofAppWinRTWindow*>(ofGetWindowPtr());
-		window->OnPointerMoved(e, m_deviceResources->GetDpi());
+		window->OnPointerMoved(e, 1);
 	}
 
 	void Renderer::OnPointerReleased(PointerEventArgs^ e)
 	{
 		ofAppWinRTWindow* window = reinterpret_cast<ofAppWinRTWindow*>(ofGetWindowPtr());
-		window->OnPointerReleased(e, m_deviceResources->GetDpi());
+		window->OnPointerReleased(e, 1);
 	}
 
 	void Renderer::OnKeyPressed(Windows::UI::Core::KeyEventArgs^ e)

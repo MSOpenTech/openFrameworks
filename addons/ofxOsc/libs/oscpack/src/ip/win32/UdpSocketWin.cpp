@@ -47,6 +47,11 @@
 #include "ip/PacketListener.h"
 #include "ip/TimerListener.h"
 
+#if defined(WINAPI_FAMILY_PARTITION)
+#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_PHONE_APP) || WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_PC_APP)
+#define TARGET_WINRT
+#endif
+#endif
 
 typedef int socklen_t;
 
@@ -311,17 +316,25 @@ class SocketReceiveMultiplexer::Implementation{
 
 	double GetCurrentTimeMs() const
 	{
+#if defined(TARGET_WINRT)
+		return (double)GetTickCount64();
+#else
 #ifndef WINCE
 		return timeGetTime(); // FIXME: bad choice if you want to run for more than 40 days
 #else
-        return 0;
+		return 0;
+#endif
 #endif
     }
 
 public:
     Implementation()
 	{
+#if defined(TARGET_WINRT)
+		breakEvent_ = CreateEventEx(NULL, NULL, NULL, EVENT_ALL_ACCESS);
+#else
 		breakEvent_ = CreateEvent( NULL, FALSE, FALSE, NULL );
+#endif
 	}
 
     ~Implementation()
@@ -382,7 +395,11 @@ public:
 		for( std::vector< std::pair< PacketListener*, UdpSocket* > >::iterator i = socketListeners_.begin();
 				i != socketListeners_.end(); ++i, ++j ){
 
+#if defined(TARGET_WINRT)
+			HANDLE event = CreateEventEx(NULL, NULL, NULL, EVENT_ALL_ACCESS);
+#else
 			HANDLE event = CreateEvent( NULL, FALSE, FALSE, NULL );
+#endif
 			WSAEventSelect( i->second->impl_->Socket(), event, FD_READ ); // note that this makes the socket non-blocking which is why we can safely call RecieveFrom() on all sockets below
 			events[j] = event;
 		}
@@ -417,8 +434,12 @@ public:
                             : 0 );
             }
 
+#if defined(TARGET_WINRT)
+			DWORD waitResult = WaitForMultipleObjectsEx((DWORD)socketListeners_.size() + 1, &events[0], FALSE, waitTime, FALSE);
+#else
 			DWORD waitResult = WaitForMultipleObjects( (DWORD)socketListeners_.size() + 1, &events[0], FALSE, waitTime );
-			if( break_ )
+#endif		
+			if (break_ || waitResult == WAIT_FAILED)
 				break;
 
 			if( waitResult != WAIT_TIMEOUT ){

@@ -69,9 +69,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\..\openFrameworks\utils\ofMatrixStack.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\..\openFrameworks\utils\ofSystemUtils.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\..\openFrameworks\utils\ofThread.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\..\openFrameworks\utils\ofURLFileLoader.cpp">
-      <ExcludedFromBuild>true</ExcludedFromBuild>
-    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\..\openFrameworks\utils\ofURLFileLoader.cpp"/>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\..\openFrameworks\utils\ofUtils.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\..\openFrameworks\utils\ofXml.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\..\openFrameworks\video\CaptureFrameGrabber\CaptureFrameGrabber.cpp" />
@@ -149,9 +147,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\..\openFrameworks\utils\ofNoise.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\..\openFrameworks\utils\ofSystemUtils.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\..\openFrameworks\utils\ofThread.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\..\openFrameworks\utils\ofURLFileLoader.h">
-      <ExcludedFromBuild>true</ExcludedFromBuild>
-    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\..\openFrameworks\utils\ofURLFileLoader.h"/>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\..\openFrameworks\utils\ofUtils.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\..\openFrameworks\utils\ofXml.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\..\openFrameworks\video\CaptureFrameGrabber\CaptureFrameGrabber.h" />

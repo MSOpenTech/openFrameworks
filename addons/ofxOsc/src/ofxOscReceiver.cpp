@@ -28,7 +28,7 @@
 
 #include "ofxOscReceiver.h"
 
-#ifndef TARGET_WIN32
+#if !defined(TARGET_WIN32) && !defined(TARGET_WINRT)
         #include <pthread.h>
 #endif
 #include <iostream>
@@ -46,7 +46,9 @@ void ofxOscReceiver::setup( int listen_port )
 		shutdown();
 	
 	// create the mutex
-	#ifdef TARGET_WIN32
+	#if defined(TARGET_WINRT)
+	mutex = CreateMutexExA(NULL, NULL, NULL, MUTEX_ALL_ACCESS);
+	#elif defined(TARGET_WIN32)
 	mutex = CreateMutexA( NULL, FALSE, NULL );
 	#else
 	pthread_mutex_init( &mutex, NULL );
@@ -57,15 +59,14 @@ void ofxOscReceiver::setup( int listen_port )
 	listen_socket = new UdpListeningReceiveSocket( IpEndpointName( IpEndpointName::ANY_ADDRESS, listen_port ), this );
 
 	// start thread
-	#ifdef TARGET_WIN32
+	#if defined(TARGET_WIN32) || defined(TARGET_WINRT)
 	thread	= CreateThread(
 							   NULL,              // default security attributes
 							   0,                 // use default stack size
-							&ofxOscReceiver::startThread,        // thread function
+							   &ofxOscReceiver::startThread,        // thread function
 							   (void*)this,             // argument to thread function
 							   0,                 // use default creation flags
 							   NULL);             // we don't the the thread id
-
 	#else
 	pthread_create( &thread, NULL, &ofxOscReceiver::startThread, (void*)this );
 	#endif
@@ -80,7 +81,7 @@ void ofxOscReceiver::shutdown()
 		// wait for shutdown to complete
 		while (!socketHasShutdown)
 		{
-			#ifdef TARGET_WIN32
+			#if defined(TARGET_WIN32) || defined(TARGET_WINRT)
 			Sleep(1);
 			#else
 			// sleep 0.1ms
@@ -91,7 +92,7 @@ void ofxOscReceiver::shutdown()
 		// thread will clean up itself
 		
 		// clean up the mutex
-		#ifdef TARGET_WIN32
+		#if defined(TARGET_WIN32) || defined(TARGET_WINRT)
 		ReleaseMutex( mutex );
 		#else
 		pthread_mutex_destroy( &mutex );	
@@ -108,7 +109,7 @@ ofxOscReceiver::~ofxOscReceiver()
 	shutdown();
 }
 
-#ifdef TARGET_WIN32
+#if defined(TARGET_WIN32) || defined(TARGET_WINRT)
 DWORD WINAPI
 #else
 void*
@@ -123,7 +124,7 @@ ofxOscReceiver::startThread( void* receiverInstance )
 	// socket listener has finished - remember this fact
 	instance->socketHasShutdown = true;
 	// return
-    #ifdef TARGET_WIN32
+	#if defined(TARGET_WIN32) || defined(TARGET_WINRT)
 	return 0;
     #else
 	return NULL;
@@ -267,7 +268,9 @@ bool ofxOscReceiver::getParameter(ofAbstractParameter & parameter){
 
 void ofxOscReceiver::grabMutex()
 {
-#ifdef TARGET_WIN32
+#if defined(TARGET_WINRT)
+	WaitForSingleObjectEx(mutex, INFINITE, FALSE);
+#elif defined(TARGET_WIN32)
 	WaitForSingleObject( mutex, INFINITE );
 #else
 	pthread_mutex_lock( &mutex );
@@ -276,7 +279,7 @@ void ofxOscReceiver::grabMutex()
 
 void ofxOscReceiver::releaseMutex()
 {
-#ifdef TARGET_WIN32
+#if defined(TARGET_WIN32) || defined(TARGET_WINRT)
 	ReleaseMutex( mutex );
 #else
 	pthread_mutex_unlock( &mutex );

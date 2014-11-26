@@ -142,7 +142,7 @@ public:
 
 	bool poll(const Poco::Timespan& timeout, int mode) const;
 		/// Determines the status of the socket, using a 
-		/// call to select().
+		/// call to poll() or select().
 		/// 
 		/// The mode argument is constructed by combining the values
 		/// of the SelectMode enumeration.
@@ -306,6 +306,16 @@ public:
 	static bool supportsIPv6();
 		/// Returns true if the system supports IPv6.
 
+	void init(int af);
+		/// Creates the underlying system socket for the given
+		/// address family.
+		///
+		/// Normally, this method should not be called directly, as
+		/// socket creation will be handled automatically. There are
+		/// a few situations where calling this method after creation
+		/// of the Socket object makes sense. One example is setting
+		/// a socket option before calling bind() on a ServerSocket.
+
 protected:
 	Socket(SocketImpl* pImpl);
 		/// Creates the Socket and attaches the given SocketImpl.
@@ -315,6 +325,23 @@ protected:
 		/// Returns the socket descriptor for this socket.
 
 private:
+
+#if defined(POCO_HAVE_FD_POLL)
+class FDCompare
+	/// Utility functor used to compare socket file descriptors.
+	/// Used in poll() member function.
+{
+public:
+	FDCompare(int fd): _fd(fd) { }
+	inline bool operator()(const Socket& socket) const
+	{ return socket.sockfd() == _fd; }
+
+private:
+	FDCompare();
+	int _fd;
+};
+#endif
+
 	SocketImpl* _pImpl;
 };
 
@@ -601,6 +628,22 @@ inline bool Socket::secure() const
 inline bool Socket::supportsIPv4()
 {
 	return true;
+}
+
+
+inline bool Socket::supportsIPv6()
+{
+#if defined(POCO_HAVE_IPv6)
+	return true;
+#else
+	return false;
+#endif
+}
+
+
+inline void Socket::init(int af)
+{
+	_pImpl->init(af);
 }
 
 

@@ -1,7 +1,7 @@
 //
 // Limit.h
 //
-// $Id: //poco/1.4/Data/include/Poco/Data/Limit.h#1 $
+// $Id: //poco/Main/Data/include/Poco/Data/Limit.h#7 $
 //
 // Library: Data
 // Package: DataCore
@@ -51,12 +51,12 @@ class Data_API Limit
 	/// Limit stores information how many rows a query should return.
 {
 public:
-	enum
+	enum Type
 	{
 		LIMIT_UNLIMITED = 0xffffffffu
 	};
 	
-	Limit(Poco::UInt32 value, bool hardLimit, bool isLowerLimit);
+	Limit(Poco::UInt32 value, bool hardLimit = false, bool isLowerLimit = false);
 		/// Creates the Limit. 
 		///
 		/// Value contains the upper row hint, if hardLimit is set to true, the limit acts as a hard
@@ -76,6 +76,12 @@ public:
 
 	bool isLowerLimit() const;
 		/// Returns true if the limit is a lower limit, otherwise it is an upperLimit
+
+	bool operator == (const Limit& other) const;
+		/// Equality operator.
+
+	bool operator != (const Limit& other) const;
+		/// Inequality operator.
 
 private:
 	Poco::UInt32 _value;
@@ -102,6 +108,22 @@ inline bool Limit::isHardLimit() const
 inline bool Limit::isLowerLimit() const
 {
 	return _isLowerLimit;
+}
+
+
+inline bool Limit::operator == (const Limit& other) const
+{
+	return other._value == _value &&
+		other._hardLimit == _hardLimit &&
+		other._isLowerLimit == _isLowerLimit;
+}
+
+
+inline bool Limit::operator != (const Limit& other) const
+{
+	return other._value != _value ||
+		other._hardLimit != _hardLimit ||
+		other._isLowerLimit != _isLowerLimit;
 }
 
 

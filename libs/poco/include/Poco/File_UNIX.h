@@ -84,6 +84,8 @@ private:
 	std::string _path;
 	
 	friend class DirectoryIteratorImpl;
+	friend class LinuxDirectoryWatcherStrategy;
+	friend class BSDDirectoryWatcherStrategy;
 };
 
 

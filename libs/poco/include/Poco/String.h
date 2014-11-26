@@ -43,6 +43,8 @@
 #include "Poco/Foundation.h"
 #include "Poco/Ascii.h"
 #include <cstring>
+#include <locale>
+#include <algorithm>
 
 
 namespace Poco {
@@ -202,19 +204,19 @@ int icompare(
 	It end1 = str.begin() + pos + n;
 	while (it1 != end1 && it2 != end2)
 	{
-        typename S::value_type c1(Ascii::toLower(*it1));
-        typename S::value_type c2(Ascii::toLower(*it2));
-        if (c1 < c2)
-            return -1;
-        else if (c1 > c2)
-            return 1;
-        ++it1; ++it2;
+		typename S::value_type c1(Ascii::toLower(*it1));
+		typename S::value_type c2(Ascii::toLower(*it2));
+		if (c1 < c2)
+			return -1;
+		else if (c1 > c2)
+			return 1;
+		++it1; ++it2;
 	}
-    
-    if (it1 == end1)
+
+	if (it1 == end1)
 		return it2 == end2 ? 0 : -1;
-    else
-        return 1;
+	else
+		return 1;
 }
 
 
@@ -228,19 +230,19 @@ int icompare(const S& str1, const S& str2)
 	typename S::const_iterator end2(str2.end());
 	while (it1 != end1 && it2 != end2)
 	{
-        typename S::value_type c1(Ascii::toLower(*it1));
-        typename S::value_type c2(Ascii::toLower(*it2));
-        if (c1 < c2)
-            return -1;
-        else if (c1 > c2)
-            return 1;
-        ++it1; ++it2;
+		typename S::value_type c1(Ascii::toLower(*it1));
+		typename S::value_type c2(Ascii::toLower(*it2));
+		if (c1 < c2)
+			return -1;
+		else if (c1 > c2)
+			return 1;
+		++it1; ++it2;
 	}
-    
-    if (it1 == end1)
+	
+	if (it1 == end1)
 		return it2 == end2 ? 0 : -1;
-    else
-        return 1;
+	else
+		return 1;
 }
 
 
@@ -313,19 +315,19 @@ int icompare(
 	typename S::const_iterator end = str.begin() + pos + n;
 	while (it != end && *ptr)
 	{
-        typename S::value_type c1(Ascii::toLower(*it));
-        typename S::value_type c2(Ascii::toLower(*ptr));
-        if (c1 < c2)
-            return -1;
-        else if (c1 > c2)
-            return 1;
-        ++it; ++ptr;
+		typename S::value_type c1(Ascii::toLower(*it));
+		typename S::value_type c2(Ascii::toLower(*ptr));
+		if (c1 < c2)
+			return -1;
+		else if (c1 > c2)
+			return 1;
+		++it; ++ptr;
 	}
-    
-    if (it == end)
+	
+	if (it == end)
 		return *ptr == 0 ? 0 : -1;
-    else
-        return 1;
+	else
+		return 1;
 }
 
 
@@ -482,6 +484,33 @@ S& replaceInPlace(S& str, const typename S::value_type* from, const typename S::
 
 
 template <class S>
+S& replaceInPlace(S& str, const typename S::value_type from, const typename S::value_type to = 0, typename S::size_type start = 0)
+{
+	if (from == to) return str;
+
+	typename S::size_type pos = 0;
+	do
+	{
+		pos = str.find(from, start);
+		if (pos != S::npos)
+		{
+			if (to) str[pos] = to;
+			else str.erase(pos, 1);
+		}
+	} while (pos != S::npos);
+
+	return str;
+}
+
+
+template <class S>
+S& removeInPlace(S& str, const typename S::value_type ch, typename S::size_type start = 0)
+{
+	return replaceInPlace(str, ch, 0, start);
+}
+
+
+template <class S>
 S replace(const S& str, const S& from, const S& to, typename S::size_type start = 0)
 	/// Replace all occurences of from (which must not be the empty string)
 	/// in str with to, starting at position start.
@@ -501,14 +530,36 @@ S replace(const S& str, const typename S::value_type* from, const typename S::va
 }
 
 
+template <class S>
+S replace(const S& str, const typename S::value_type from, const typename S::value_type to = 0, typename S::size_type start = 0)
+{
+	S result(str);
+	replaceInPlace(result, from, to, start);
+	return result;
+}
+
+
+template <class S>
+S remove(const S& str, const typename S::value_type ch, typename S::size_type start = 0)
+{
+	S result(str);
+	replaceInPlace(result, ch, 0, start);
+	return result;
+}
+
+
 #else
 
 
-std::string Foundation_API replace(const std::string& str, const std::string& from, const std::string& to, std::string::size_type start = 0);
-std::string Foundation_API replace(const std::string& str, const std::string::value_type* from, const std::string::value_type* to, std::string::size_type start = 0);
-std::string& Foundation_API replaceInPlace(std::string& str, const std::string& from, const std::string& to, std::string::size_type start = 0);
-std::string& Foundation_API replaceInPlace(std::string& str, const std::string::value_type* from, const std::string::value_type* to, std::string::size_type start = 0);
-	
+Foundation_API std::string replace(const std::string& str, const std::string& from, const std::string& to, std::string::size_type start = 0);
+Foundation_API std::string replace(const std::string& str, const std::string::value_type* from, const std::string::value_type* to, std::string::size_type start = 0);
+Foundation_API std::string replace(const std::string& str, const std::string::value_type from, const std::string::value_type to = 0, std::string::size_type start = 0);
+Foundation_API std::string remove(const std::string& str, const std::string::value_type ch, std::string::size_type start = 0);
+Foundation_API std::string& replaceInPlace(std::string& str, const std::string& from, const std::string& to, std::string::size_type start = 0);
+Foundation_API std::string& replaceInPlace(std::string& str, const std::string::value_type* from, const std::string::value_type* to, std::string::size_type start = 0);
+Foundation_API std::string& replaceInPlace(std::string& str, const std::string::value_type from, const std::string::value_type to = 0, std::string::size_type start = 0);
+Foundation_API std::string& removeInPlace(std::string& str, const std::string::value_type ch, std::string::size_type start = 0);
+
 
 #endif	
 
@@ -591,6 +642,79 @@ S cat(const S& delim, const It& begin, const It& end)
 	}
 	return result;
 }
+
+
+//
+// case-insensitive string equality
+//
+
+
+template <typename charT>
+struct i_char_traits : public std::char_traits<charT>
+{
+	inline static bool eq(charT c1, charT c2)
+	{
+		return Ascii::toLower(c1) == Ascii::toLower(c2);
+	}
+
+	inline static bool ne(charT c1, charT c2)
+	{
+		return !eq(c1, c2);
+	}
+
+	inline static bool lt(charT c1, charT c2)
+	{
+		return Ascii::toLower(c1) < Ascii::toLower(c2);
+	}
+
+	static int compare(const charT* s1, const charT* s2, size_t n)
+	{
+		for (int i = 0; i < n && s1 && s2; ++i, ++s1, ++s2)
+		{
+			if (Ascii::toLower(*s1) == Ascii::toLower(*s2)) continue;
+			else if (Ascii::toLower(*s1) < Ascii::toLower(*s2)) return -1;
+			else return 1;
+		}
+
+		return 0;
+	}
+
+	static const charT* find(const charT* s, int n, charT a)
+	{
+		while(n-- > 0 && Ascii::toLower(*s) != Ascii::toLower(a)) { ++s; }
+		return s;
+	}
+};
+
+
+typedef std::basic_string<char, i_char_traits<char> > istring;
+	/// Case-insensitive std::string counterpart.
+
+
+template<typename T>
+std::size_t isubstr(const T& str, const T& sought)
+	/// Case-insensitive substring; searches for a substring
+	/// without regards to case.
+{
+	typename T::const_iterator it = std::search(str.begin(), str.end(),
+		sought.begin(), sought.end(), 
+		i_char_traits<typename T::value_type>::eq);
+
+	if (it != str.end()) return it - str.begin();
+	else return static_cast<std::size_t>(T::npos);
+}
+
+
+struct CILess
+	/// Case-insensitive less-than functor; useful for standard maps
+	/// and sets with std::strings keys and case-insensitive ordering
+	/// requirement.
+{
+	inline bool operator() (const std::string& s1, const std::string& s2) const
+	{
+		return icompare(s1, s2) < 0;
+	}
+};
 
 
 } // namespace Poco

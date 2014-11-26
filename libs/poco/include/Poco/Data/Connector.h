@@ -1,7 +1,7 @@
 //
 // Connector.h
 //
-// $Id: //poco/1.4/Data/include/Poco/Data/Connector.h#1 $
+// $Id: //poco/Main/Data/include/Poco/Data/Connector.h#4 $
 //
 // Library: Data
 // Package: DataCore
@@ -63,7 +63,11 @@ public:
 	virtual ~Connector();
 		/// Destroys the Connector.
 
-	virtual Poco::AutoPtr<SessionImpl> createSession(const std::string& connectionString) = 0;
+	virtual const std::string& name() const = 0;
+		/// Returns the name associated with this connector.
+
+	virtual Poco::AutoPtr<SessionImpl> createSession(const std::string& connectionString,
+		std::size_t timeout = SessionImpl::LOGIN_TIMEOUT_DEFAULT) = 0;
 		/// Create a SessionImpl object and initialize it with the given connectionString.
 };
 
