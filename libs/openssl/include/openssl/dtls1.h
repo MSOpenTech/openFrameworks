@@ -57,8 +57,8 @@
  *
  */
 
-#ifndef HEADER_DTLS1_H 
-#define HEADER_DTLS1_H 
+#ifndef HEADER_DTLS1_H
+#define HEADER_DTLS1_H
 
 #include <openssl/buffer.h>
 #include <openssl/pqueue.h>
@@ -69,16 +69,14 @@
 #ifdef OPENSSL_SYS_WIN32
 /* Needed for struct timeval */
 #include <winsock.h>
-#if !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
-struct timeval {
-    long    tv_sec;         /* seconds */
-    long    tv_usec;        /* and microseconds */
-};
-#endif
 #elif defined(OPENSSL_SYS_NETWARE) && !defined(_WINSOCK2API_)
 #include <sys/timeval.h>
 #else
+#if defined(OPENSSL_SYS_VXWORKS)
+#include <sys/times.h>
+#else
 #include <sys/time.h>
+#endif
 #endif
 
 #ifdef  __cplusplus
@@ -86,7 +84,13 @@ extern "C" {
 #endif
 
 #define DTLS1_VERSION			0xFEFF
+#define DTLS1_2_VERSION			0xFEFD
+#define DTLS_MAX_VERSION		DTLS1_2_VERSION
+
 #define DTLS1_BAD_VER			0x0100
+
+/* Special value for method supporting multiple versions */
+#define DTLS_ANY_VERSION		0x1FFFF
 
 #if 0
 /* this alert description is not specified anywhere... */
@@ -111,6 +115,11 @@ extern "C" {
 #define DTLS1_AL_HEADER_LENGTH                   2
 #endif
 
+#ifndef OPENSSL_NO_SSL_INTERN
+
+#ifndef OPENSSL_NO_SCTP
+#define DTLS1_SCTP_AUTH_LABEL	"EXPORTER_DTLS_OVER_SCTP"
+#endif
 
 typedef struct dtls1_bitmap_st
 	{
@@ -233,9 +242,15 @@ typedef struct dtls1_state_st
 
 	struct dtls1_timeout_st timeout;
 
-	/* Indicates when the last handshake msg sent will timeout */
+	/* Indicates when the last handshake msg or heartbeat sent will timeout */
+#if defined(WINAPI_FAMILY) && ( WINAPI_FAMILY==WINAPI_FAMILY_PHONE_APP || WINAPI_FAMILY==WINAPI_FAMILY_PC_APP )// winsock.h not present in WindowsPhone/WindowsStore, defining the expected struct here 
+	struct next_timeout {
+		long tv_sec;
+		long tv_usec;
+	} next_timeout;
+#else
 	struct timeval next_timeout;
-
+#endif
 	/* Timeout duration */
 	unsigned short timeout_duration;
 
@@ -249,6 +264,13 @@ typedef struct dtls1_state_st
 	unsigned int retransmitting;
 	unsigned int change_cipher_spec_ok;
 
+#ifndef OPENSSL_NO_SCTP
+	/* used when SSL_ST_XX_FLUSH is entered */
+	int next_state;
+
+	int shutdown_received;
+#endif
+
 	} DTLS1_STATE;
 
 typedef struct dtls1_record_data_st
@@ -257,8 +279,12 @@ typedef struct dtls1_record_data_st
 	unsigned int   packet_length;
 	SSL3_BUFFER    rbuf;
 	SSL3_RECORD    rrec;
+#ifndef OPENSSL_NO_SCTP
+	struct bio_dgram_sctp_rcvinfo recordinfo;
+#endif
 	} DTLS1_RECORD_DATA;
 
+#endif
 
 /* Timeout multipliers (timeout slice is defined in apps/timeouts.h */
 #define DTLS1_TMO_READ_COUNT                      2
@@ -270,4 +296,3 @@ typedef struct dtls1_record_data_st
 }
 #endif
 #endif
-

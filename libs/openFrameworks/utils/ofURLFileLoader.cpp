@@ -8,13 +8,11 @@
 #include "Poco/Exception.h"
 #include "Poco/URIStreamOpener.h"
 #include "Poco/Net/HTTPStreamFactory.h"
-// SSL_DISABLED
-//#include "Poco/Net/HTTPSClientSession.h"
-//#include "Poco/Net/HTTPSStreamFactory.h"
-//#include "Poco/Net/SSLManager.h"
-//#include "Poco/Net/KeyConsoleHandler.h"
-//#include "Poco/Net/ConsoleCertificateHandler.h"
-// SSL_DISABLED
+#include "Poco/Net/HTTPSClientSession.h"
+#include "Poco/Net/HTTPSStreamFactory.h"
+#include "Poco/Net/SSLManager.h"
+#include "Poco/Net/KeyConsoleHandler.h"
+#include "Poco/Net/ConsoleCertificateHandler.h"
 
 #include "ofURLFileLoader.h"
 #include "ofAppRunner.h"
@@ -37,13 +35,11 @@ ofURLFileLoader::ofURLFileLoader() {
 	if(!factoryLoaded){
 		try {
 			HTTPStreamFactory::registerFactory();
-			// SSL_DISABLED
-			//HTTPSStreamFactory::registerFactory();
-			//SharedPtr<PrivateKeyPassphraseHandler> pConsoleHandler = new KeyConsoleHandler(false);
-			//SharedPtr<InvalidCertificateHandler> pInvalidCertHandler = new ConsoleCertificateHandler(true);
-			//Context::Ptr pContext = new Context(Context::CLIENT_USE, "", Context::VERIFY_NONE);
-			//SSLManager::instance().initializeClient(pConsoleHandler, pInvalidCertHandler, pContext);
-			// SSL_DISABLED
+			HTTPSStreamFactory::registerFactory();
+			SharedPtr<PrivateKeyPassphraseHandler> pConsoleHandler = new KeyConsoleHandler(false);
+			SharedPtr<InvalidCertificateHandler> pInvalidCertHandler = new ConsoleCertificateHandler(true);
+			Context::Ptr pContext = new Context(Context::CLIENT_USE, "", Context::VERIFY_NONE);
+			SSLManager::instance().initializeClient(pConsoleHandler, pInvalidCertHandler, pContext);
 			factoryLoaded = true;
 		}
 		catch (Poco::SystemException & PS) {
@@ -168,22 +164,12 @@ ofHttpResponse ofURLFileLoader::handleRequest(ofHttpRequest request) {
 		ofPtr<HTTPSession> session;
 		istream * rs;
 		if(uri.getScheme()=="https"){
-			// SSL_DISABLED
-			//const Poco::Net::Context::Ptr context( new Poco::Net::Context( Poco::Net::Context::CLIENT_USE, "", "", "rootcert.pem" ) );
-			//HTTPSClientSession * httpsSession = new HTTPSClientSession(uri.getHost(), uri.getPort());//,context);
-			//httpsSession->setTimeout(Poco::Timespan(20,0));
-			//httpsSession->sendRequest(req);
-			//rs = &httpsSession->receiveResponse(res);
-			//session = ofPtr<HTTPSession>(httpsSession);
-			// SSL_DISABLED
-
-			// TMP FALLBACK
-			HTTPClientSession * httpSession = new HTTPClientSession(uri.getHost(), uri.getPort());
-			httpSession->setTimeout(Poco::Timespan(20, 0));
-			httpSession->sendRequest(req);
-			rs = &httpSession->receiveResponse(res);
-			session = ofPtr<HTTPSession>(httpSession);
-			// TMP FALLBACK
+			const Poco::Net::Context::Ptr context( new Poco::Net::Context( Poco::Net::Context::CLIENT_USE, "", "", "rootcert.pem" ) );
+			HTTPSClientSession * httpsSession = new HTTPSClientSession(uri.getHost(), uri.getPort());//,context);
+			httpsSession->setTimeout(Poco::Timespan(20,0));
+			httpsSession->sendRequest(req);
+			rs = &httpsSession->receiveResponse(res);
+			session = ofPtr<HTTPSession>(httpsSession);
 		}
 		else{
 			HTTPClientSession * httpSession = new HTTPClientSession(uri.getHost(), uri.getPort());
@@ -277,8 +263,6 @@ void ofURLFileLoaderShutdown(){
 	if(initialized){
 		ofRemoveAllURLRequests();
 		ofStopURLLoader();
-		// SSL_DISABLED
-		//Poco::Net::uninitializeSSL();
-		// SSL_DISABLED
+		Poco::Net::uninitializeSSL();
 	}
 }

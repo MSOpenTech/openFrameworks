@@ -67,6 +67,18 @@
     <None Include="..\..\..\..\..\export\vs\winrt_arm\fmodexWSA81.dll">
       <Filter>win32 dlls</Filter>
     </None>
+    <None Include="..\..\..\..\..\export\vs\winrt_arm\libeay32.dll">
+      <Filter>arm dlls</Filter>
+    </None>
+    <None Include="..\..\..\..\..\export\vs\winrt_arm\ssleay32.dll">
+      <Filter>arm dlls</Filter>
+    </None>
+    <None Include="..\..\..\..\..\export\vs\winrt_win32\libeay32.dll">
+      <Filter>win32 dlls</Filter>
+    </None>
+    <None Include="..\..\..\..\..\export\vs\winrt_win32\ssleay32.dll">
+      <Filter>win32 dlls</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Page Include="DirectXPage.xaml" />
