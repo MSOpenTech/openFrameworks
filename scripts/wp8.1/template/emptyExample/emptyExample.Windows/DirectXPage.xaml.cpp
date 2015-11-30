@@ -107,9 +107,6 @@ DirectXPage::~DirectXPage()
 // Saves the current state of the app for suspend and terminate events.
 void DirectXPage::SaveInternalState(IPropertySet^ state)
 {
-	critical_section::scoped_lock lock(m_main->GetCriticalSection());
-	m_deviceResources->Trim();
-
 	// Stop rendering when the app is suspended.
 	m_main->StopRenderLoop();
 
