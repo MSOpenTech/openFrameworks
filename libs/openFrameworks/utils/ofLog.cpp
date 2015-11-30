@@ -261,7 +261,9 @@ void ofConsoleLoggerChannel::log(ofLogLevel level, const string & module, const 
 		out << module << ": ";
 	}
 	out << message << endl;
-	OutputDebugStringA(out.str().c_str());
+
+    std::wstring w(out.str().begin(), out.str().end());
+	OutputDebugStringW(w.c_str());
 #else
 	// print to cerr for OF_LOG_ERROR and OF_LOG_FATAL_ERROR, everything else to cout 
 	ostream& out = level < OF_LOG_ERROR ? cout : cerr;
@@ -291,7 +293,9 @@ void ofConsoleLoggerChannel::log(ofLogLevel level, const string & module, const 
 	}
 	bytesWritten += vsprintf(buffer + bytesWritten, format, args);
 	bytesWritten += sprintf(buffer + bytesWritten, "\n");
-	OutputDebugStringA(buffer);
+
+    std::wstring w(buffer, buffer + strlen(buffer));
+    OutputDebugStringW(w.c_str());
 #else
 	//thanks stefan!
 	//http://www.ozzu.com/cpp-tutorials/tutorial-writing-custom-printf-wrapper-function-t89166.html
